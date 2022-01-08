@@ -85,10 +85,10 @@ OutputIterator transform(ExecutionPolicy &sep, Iterator b, Iterator e,
 * @param op     : Binary Operator
 * @return  An iterator pointing to the last element
 */
-template <class ExecutionPolicy, class InputIterator, class OutputIterator,
-          class BinaryOperation>
-OutputIterator transform(ExecutionPolicy &sep, InputIterator first1,
-                         InputIterator last1, InputIterator first2,
+template <class ExecutionPolicy, class InputIterator1, class InputIterator2,
+          class OutputIterator, class BinaryOperation>
+OutputIterator transform(ExecutionPolicy &sep, InputIterator1 first1,
+                         InputIterator1 last1, InputIterator2 first2,
                          OutputIterator result, BinaryOperation op) {
   cl::sycl::queue q(sep.get_queue());
   auto device = q.get_device();
@@ -125,11 +125,11 @@ OutputIterator transform(ExecutionPolicy &sep, InputIterator first1,
 * @param op     : Binary Operator
 * @return  An iterator pointing to the last element
 */
-template <class ExecutionPolicy, class InputIterator, class OutputIterator,
-          class BinaryOperation>
+template <class ExecutionPolicy, class InputIterator1, class InputIterator2,
+          class OutputIterator, class BinaryOperation>
 OutputIterator transform(ExecutionPolicy &sep, cl::sycl::queue &q,
-                         InputIterator first1, InputIterator last1,
-                         InputIterator first2, OutputIterator result,
+                         InputIterator1 first1, InputIterator1 last1,
+                         InputIterator2 first2, OutputIterator result,
                          BinaryOperation op) {
   auto device = q.get_device();
   auto buf1 = sycl::helpers::make_const_buffer(first1, last1);
