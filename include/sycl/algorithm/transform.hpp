@@ -56,6 +56,7 @@ OutputIterator transform(ExecutionPolicy &sep, Iterator b, Iterator e,
     cl::sycl::queue q(sep.get_queue());
     auto device = q.get_device();
     auto bufI = sycl::helpers::make_const_buffer(b, e);
+    auto n = bufI.get_count();
     auto bufO = sycl::helpers::make_buffer(out, out + bufI.get_count());
     auto vectorSize = bufI.get_count();
     const auto ndRange = sep.calculateNdRange(vectorSize);
@@ -63,7 +64,7 @@ OutputIterator transform(ExecutionPolicy &sep, Iterator b, Iterator e,
         cl::sycl::handler &h) {
       auto aI = bufI.template get_access<cl::sycl::access::mode::read>(h);
       auto aO = bufO.template get_access<cl::sycl::access::mode::write>(h);
-      h.parallel_for<typename ExecutionPolicy::kernelName>(
+      h.parallel_for(
           ndRange, [aI, aO, op, vectorSize](cl::sycl::nd_item<1> id) {
             if ((id.get_global_id(0) < vectorSize)) {
               aO[id.get_global_id(0)] = op(aI[id.get_global_id(0)]);
@@ -71,8 +72,8 @@ OutputIterator transform(ExecutionPolicy &sep, Iterator b, Iterator e,
           });
     };
     q.submit(f);
+    return out + n;
   }
-  return out;
 }
 
 /** transform sycl implementation
@@ -102,7 +103,7 @@ OutputIterator transform(ExecutionPolicy &sep, InputIterator1 first1,
     auto a1 = buf1.template get_access<cl::sycl::access::mode::read>(h);
     auto a2 = buf2.template get_access<cl::sycl::access::mode::read>(h);
     auto aO = res.template get_access<cl::sycl::access::mode::write>(h);
-    h.parallel_for<typename ExecutionPolicy::kernelName>(
+    h.parallel_for(
         ndRange, [a1, a2, aO, op, n](cl::sycl::nd_item<1> id) {
           if (id.get_global_id(0) < n) {
             aO[id.get_global_id(0)] =
@@ -111,7 +112,7 @@ OutputIterator transform(ExecutionPolicy &sep, InputIterator1 first1,
         });
   };
   q.submit(f);
-  return first2 + n;
+  return result + n;
 }
 
 /** transform sycl implementation
@@ -151,7 +152,7 @@ OutputIterator transform(ExecutionPolicy &sep, cl::sycl::queue &q,
         });
   };
   q.submit(f);
-  return first2 + n;
+  return result + n;
 }
 
 /** transform sycl implementation
