@@ -30,6 +30,7 @@
 #define __SYCL_IMPL_ALGORITHM_EXCLUSIVE_SCAN__
 
 #include <sycl/helpers/sycl_buffers.hpp>
+#include <sycl/helpers/sycl_differences.hpp>
 #include <sycl/helpers/sycl_namegen.hpp>
 #include <sycl/algorithm/buffer_algorithms.hpp>
 
@@ -79,8 +80,7 @@ OutputIterator exclusive_scan(ExecutionPolicy &sep, InputIterator b,
       cl::sycl::handler &h) {
     auto aI = inBuf->template get_access<cl::sycl::access::mode::read>(h);
     auto aO = outBuf->template get_access<cl::sycl::access::mode::write>(h);
-    h.parallel_for<
-        cl::sycl::helpers::NameGen<0, typename ExecutionPolicy::kernelName> >(
+    h.parallel_for(
         ndRange, [aI, aO, init, vectorSize](cl::sycl::nd_item<1> id) {
           size_t m_id = id.get_global_id(0);
           if (m_id > 0) {
@@ -102,8 +102,7 @@ OutputIterator exclusive_scan(ExecutionPolicy &sep, InputIterator b,
           inBuf->template get_access<cl::sycl::access::mode::read_write>(h);
       auto aO =
           outBuf->template get_access<cl::sycl::access::mode::read_write>(h);
-      h.parallel_for<
-          cl::sycl::helpers::NameGen<1, typename ExecutionPolicy::kernelName> >(
+      h.parallel_for(
           ndRange, [aI, aO, bop, vectorSize, i](cl::sycl::nd_item<1> id) {
             size_t td = 1 << (i - 1);
             size_t m_id = id.get_global_id(0);

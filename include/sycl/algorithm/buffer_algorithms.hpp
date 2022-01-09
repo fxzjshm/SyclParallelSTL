@@ -391,7 +391,7 @@ void buffer_mapscan(ExecutionPolicy &snp,
       scratch { cl::sycl::range<1> { d.size_per_work_group }, cgh };
 
 
-    cgh.parallel_for_work_group<cl::sycl::helpers::NameGen<0, typename ExecutionPolicy::kernelName> >(rng_wg, rng_wi,
+    cgh.parallel_for_work_group(rng_wg, rng_wi,
                                           [=](cl::sycl::group<1> grp) {
       size_t group_id = grp.get_id(0);
       size_t group_begin = group_id * d.size_per_work_group;
@@ -498,7 +498,7 @@ void buffer_mapscan(ExecutionPolicy &snp,
       <cl::sycl::access::mode::read_write>(cgh);
     auto read_scan = scan.template get_access
       <cl::sycl::access::mode::read>(cgh);
-    cgh.parallel_for_work_group<cl::sycl::helpers::NameGen<1, typename ExecutionPolicy::kernelName>>(rng_wg, rng_wi,
+    cgh.parallel_for_work_group(rng_wg, rng_wi,
                                           [=](cl::sycl::group<1> grp) {
       size_t group_id = grp.get_id(0);
       B acc = read_scan[group_id];
