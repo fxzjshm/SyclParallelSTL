@@ -19,6 +19,14 @@ template <typename ExecutionPolicy, typename InputIterator,
 OutputIterator transform_if(
     ExecutionPolicy& exec, InputIterator first, InputIterator last,
     OutputIterator result, UnaryFunction function, Predicate predicate) {
+  return ::sycl::impl::transform_if(snp, first, last, first, result, function, predicate);
+}
+
+template <typename ExecutionPolicy, typename InputIterator1, typename InputIterator2,
+          typename OutputIterator, typename UnaryFunction, typename Predicate>
+OutputIterator transform_if(
+    ExecutionPolicy& exec, InputIterator1 first, InputIterator1 last, InputIterator2 stencil,
+    OutputIterator result, UnaryFunction function, Predicate predicate) {
 
   cl::sycl::queue q(exec.get_queue());
   auto device = q.get_device();
@@ -28,18 +36,15 @@ OutputIterator transform_if(
 
   // reference: boost/compute/algorithm/transform_if.cpp
   auto indices = std::vector<uint8_t>(count), sums = std::vector<uint8_t>(count);
-  ::sycl::impl::transform(exec, first, last, indices.begin(),
+  ::sycl::impl::transform(exec, stencil, stencil + count, indices.begin(),
     [predicate](auto x){
       return (uint8_t)((predicate(x)) ? 1 : 0);
   });
-
-  q.wait();
 
   size_t copied_element_count = *(indices.cend() - 1);
   ::std::experimental::parallel::exclusive_scan(
       exec, indices.begin(), indices.end(), sums.begin(), (uint8_t)0
   );
-  q.wait();
   copied_element_count += *(sums.cend() - 1); // last scan element plus last mask element
 
   auto vectorSize = count;
