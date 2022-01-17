@@ -19,7 +19,7 @@ template <typename ExecutionPolicy, typename InputIterator,
 OutputIterator transform_if(
     ExecutionPolicy& exec, InputIterator first, InputIterator last,
     OutputIterator result, UnaryFunction function, Predicate predicate) {
-  return ::sycl::impl::transform_if(snp, first, last, first, result, function, predicate);
+  return ::sycl::impl::transform_if(exec, first, last, first, result, function, predicate);
 }
 
 template <typename ExecutionPolicy, typename InputIterator1, typename InputIterator2,
@@ -32,11 +32,13 @@ OutputIterator transform_if(
   auto device = q.get_device();
   auto bufI = sycl::helpers::make_const_buffer(first, last);
   auto count = bufI.get_count();
+  auto bufStencil = sycl::helpers::make_buffer(stencil, stencil + count);
   auto bufO = sycl::helpers::make_buffer(result, result + bufI.get_count());
 
   // reference: boost/compute/algorithm/transform_if.cpp
   auto indices = std::vector<uint8_t>(count), sums = std::vector<uint8_t>(count);
-  ::sycl::impl::transform(exec, stencil, stencil + count, indices.begin(),
+  ::sycl::impl::transform(exec, sycl::helpers::BufferIterator(bufStencil, 0),
+    sycl::helpers::BufferIterator(bufStencil, count), indices.begin(),
     [predicate](auto x){
       return (uint8_t)((predicate(x)) ? 1 : 0);
   });
@@ -50,14 +52,15 @@ OutputIterator transform_if(
   auto vectorSize = count;
   const auto ndRange = exec.calculateNdRange(vectorSize);
   auto bufSums = sycl::helpers::make_buffer(sums.begin(), sums.end());
-  auto transform_if_do_copy = [vectorSize, ndRange, &bufI, &bufSums, &bufO, predicate, function](
+  auto transform_if_do_copy = [vectorSize, ndRange, &bufI, &bufSums, &bufStencil, &bufO, predicate, function](
       cl::sycl::handler &h) {
     auto aI = bufI.template get_access<cl::sycl::access::mode::read>(h);
     auto aSums = bufSums.template get_access<cl::sycl::access::mode::read>(h);
+    auto aStencil = bufStencil.template get_access<cl::sycl::access::mode::read>(h);
     auto aO = bufO.template get_access<cl::sycl::access::mode::write>(h);
     h.parallel_for(
-        ndRange, [aI, aSums, aO, predicate, function](cl::sycl::nd_item<1> id) {
-          if (predicate(aI[id.get_global_id(0)])) {
+        ndRange, [aI, aSums, aStencil, aO, predicate, function](cl::sycl::nd_item<1> id) {
+          if (predicate(aStencil[id.get_global_id(0)])) {
             aO[aSums[id.get_global_id(0)]] = function(aI[id.get_global_id(0)]);
           }
         });
