@@ -43,7 +43,8 @@ namespace impl {
  * Implementation of the command group that submits a for_each kernel.
  * The kernel is implemented as a lambda.
  */
-template <class ExecutionPolicy, class Iterator, class UnaryFunction>
+template <class ExecutionPolicy, class Iterator, class UnaryFunction, class T = typename std::iterator_traits<Iterator>::value_type,
+          typename = typename std::enable_if<std::is_assignable<decltype( *std::declval<Iterator>() ),T>::value>::value>
 void for_each(ExecutionPolicy &sep, Iterator b, Iterator e, UnaryFunction op) {
   {
     cl::sycl::queue q(sep.get_queue());
@@ -58,6 +59,25 @@ void for_each(ExecutionPolicy &sep, Iterator b, Iterator e, UnaryFunction op) {
           ndRange, [aI, op, vectorSize](cl::sycl::nd_item<1> id) {
             if (id.get_global_id(0) < vectorSize) {
               op(aI[id.get_global_id(0)]);
+            }
+          });
+    };
+    q.submit(f);
+  }
+}
+
+template <class ExecutionPolicy, class Iterator, class UnaryFunction>
+void for_each(ExecutionPolicy &sep, Iterator b, Iterator e, UnaryFunction op) {
+  {
+    cl::sycl::queue q(sep.get_queue());
+    auto device = q.get_device();
+    auto vectorSize = std::distance(b, e);
+    const auto ndRange = sep.calculateNdRange(vectorSize);
+    auto f = [vectorSize, ndRange, &b, op](cl::sycl::handler &h) mutable {
+      h.parallel_for<typename ExecutionPolicy::kernelName>(
+          ndRange, [op, vectorSize, &b](cl::sycl::nd_item<1> id) {
+            if (id.get_global_id(0) < vectorSize) {
+              op(*(b + id.get_global_id(0)));
             }
           });
     };
