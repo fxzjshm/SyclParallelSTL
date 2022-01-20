@@ -33,6 +33,8 @@
 #include <typeinfo>
 #include <algorithm>
 
+#include <ZipIterator.hpp>
+
 /** sort_kernel_bitonic.
  * Class used to name the bitonic kernel sort per type.
  */
@@ -330,6 +332,17 @@ void sort(ExecutionPolicy &sep, RandomIt first, RandomIt last, CompareOp comp) {
         sequential_sort_name<typename ExecutionPolicy::kernelName>>(
         q, buf, vectorSize, comp);
   }
+}
+
+template <class ExecutionPolicy, class KeyItrator, class ValueItrator, class CompareOp>
+void sort_by_key(ExecutionPolicy &sep, KeyItrator key_first, KeyItrator key_last,
+                 ValueItrator value_first, CompareOp comp) {
+  auto n = std::distance(key_first, key_last);
+  sort(sep, ZipIter(key_first, value_first), ZipIter(key_first, value_first) + n,
+    [comp] (auto a, auto b) {
+      return comp(std::get<0>(a), std::get<0>(b));
+    }
+  );
 }
 
 }  // namespace impl
