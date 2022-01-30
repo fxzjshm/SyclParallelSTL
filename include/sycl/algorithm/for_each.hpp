@@ -81,7 +81,7 @@ void for_each(ExecutionPolicy &sep, Iterator b, Iterator e, UnaryFunction op) {
             }
           });
     };
-    q.submit(f);
+    q.submit(f).wait();
   }
 }
 
