@@ -130,6 +130,7 @@ reuse_buffer_impl(Iterator b, Iterator e, std::input_iterator_tag) {
   // TODO: This may need to create a sub-buffer if the range does not match
   //  the whole buffer.
   //  TODO: Technically this can be a const buffer since it is input-only
+  assert((b.get_pos() == 0 && e.get_pos() == e.get_buffer().get_count()));
   return b.get_buffer();
 }
 
@@ -147,6 +148,7 @@ cl::sycl::buffer<typename std::iterator_traits<Iterator>::value_type, 1,
 reuse_buffer_impl(Iterator b, Iterator e, std::random_access_iterator_tag) {
   // TODO: This may need to create a sub-buffer if the range does not match
   //  the whole buffer.
+  assert((b.get_pos() == 0 && e.get_pos() == e.get_buffer().get_count()));
   return b.get_buffer();
 }
 
