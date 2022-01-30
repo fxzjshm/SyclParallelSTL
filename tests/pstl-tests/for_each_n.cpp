@@ -40,10 +40,10 @@ TEST_F(ForEachNAlgorithm, TestStdForEachN) {
   std::vector<int> v = {2, 1, 3, 4, 8};
   std::vector<int> result = {3, 2, 4, 5, 9};
 
-  for_each_n(v.begin(), v.size(), [=](int &val) { val--; });
+  std::for_each_n(v.begin(), v.size(), [=](int &val) { val--; });
 
   int adder = 2;
-  for_each_n(v.begin(), v.size(), [=](int &val) { val += adder; });
+  std::for_each_n(v.begin(), v.size(), [=](int &val) { val += adder; });
 
 #if PRINT_OUTPUT
   std::cout << " Elements " << std::endl;
@@ -58,9 +58,9 @@ TEST_F(ForEachNAlgorithm, TestStd2ForEachN) {
   std::vector<int> v = {2, 1, 3, 4, 8};
   std::vector<int> result = {3, 2, 4, 5, 9};
 
-  auto iterator1 = for_each_n(v.begin(), v.size(), [=](int &val) { val--; });
+  auto iterator1 = std::for_each_n(v.begin(), v.size(), [=](int &val) { val--; });
 
-  for_each_n(v.begin(), v.size(), [=](int &val) { val += 2; });
+  std::for_each_n(v.begin(), v.size(), [=](int &val) { val += 2; });
 
   EXPECT_TRUE(v.end() == iterator1);
 }
@@ -70,7 +70,7 @@ TEST_F(ForEachNAlgorithm, TestStd3ForEachN) {
   std::vector<int> result = {3, 2, 4, 5, 9};
 
   int minus_size = -v.size();
-  auto iterator1 = for_each_n(v.begin(), minus_size, [=](int &val) { val++; });
+  auto iterator1 = std::for_each_n(v.begin(), minus_size, [=](int &val) { val++; });
 
   EXPECT_TRUE(v.begin() == iterator1);
 }
