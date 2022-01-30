@@ -97,7 +97,7 @@ sycl_algorithm_descriptor compute_mapreduce_descriptor(cl::sycl::device device,
   size_t local_mem_size =
     device.get_info<cl::sycl::info::device::local_mem_size>();
 
-  size_t nb_work_item = min(max_work_item, local_mem_size / sizeofB);
+  size_t nb_work_item = min(min(max_work_item, local_mem_size / sizeofB), size);
 
 
   /* (nb_work_item == 0) iff (sizeof(T) > local_mem_size)
