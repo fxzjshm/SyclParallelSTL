@@ -63,7 +63,7 @@ InputIterator for_each_n(ExecutionPolicy &exec, InputIterator first, Size n,
     auto cg = [vectorSize, ndRange, &bufI, f](
         cl::sycl::handler &h) mutable {
       auto aI = bufI.template get_access<cl::sycl::access::mode::read_write>(h);
-      h.parallel_for<typename ExecutionPolicy::kernelName>(
+      h.parallel_for(
           ndRange, [vectorSize, aI, f](cl::sycl::nd_item<1> id) {
             if (id.get_global_id(0) < vectorSize) {
               f(aI[id.get_global_id(0)]);

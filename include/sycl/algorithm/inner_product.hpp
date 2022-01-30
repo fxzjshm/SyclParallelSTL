@@ -58,7 +58,7 @@ struct InnerProductImpl<true> {
     auto input_buff1 = sycl::helpers::make_const_buffer(first1, last1);
     auto input_buff2 = sycl::helpers::make_const_buffer(first2, last2);
 
-    return inner_product_sequential_sycl<typename ExecutionPolicy::kernelName>(exec.get_queue(), input_buff1,
+    return inner_product_sequential_sycl(exec.get_queue(), input_buff1,
                                                                                input_buff2, value, size, op1, op2);
   }
 };
@@ -142,7 +142,7 @@ T inner_product(ExecutionPolicy &exec, InputIt1 first1, InputIt1 last1,
                          cl::sycl::access::target::local>
           scratch(ndRange.get_local_range(), h);
 
-      h.parallel_for<typename ExecutionPolicy::kernelName>(
+      h.parallel_for(
           ndRange, [a1, a2, aR, scratch, length, local, passes, op1, op2](
                  cl::sycl::nd_item<1> id) {
             auto r = ReductionStrategy<T>(local, length, id, scratch);

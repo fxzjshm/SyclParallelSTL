@@ -87,7 +87,7 @@ bool equal(ExecutionPolicy& exec, ForwardIt1 first1, ForwardIt1 last1,
                          cl::sycl::access::target::local>
           scratch(ndRange.get_local_range(), h);
 
-      h.parallel_for<typename ExecutionPolicy::kernelName>(
+      h.parallel_for(
           ndRange, [a1, a2, aR, scratch, passes, local, length,
               p](cl::sycl::nd_item<1> id) {
             auto r =

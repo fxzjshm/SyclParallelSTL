@@ -29,7 +29,7 @@ void iota(ExecutionPolicy &sep, ForwardIt b, ForwardIt e, const T &value = T(0))
   auto f = [vectorSize, ndRange, &bufI, val](
       cl::sycl::handler &h) mutable {
     auto aI = bufI.template get_access<cl::sycl::access::mode::read_write>(h);
-    h.parallel_for<typename ExecutionPolicy::kernelName>(
+    h.parallel_for(
         ndRange, [aI, val, vectorSize](cl::sycl::nd_item<1> id) {
           if (id.get_global_id(0) < vectorSize) {
             aI[id.get_global_id(0)] = val + id.get_global_id(0);

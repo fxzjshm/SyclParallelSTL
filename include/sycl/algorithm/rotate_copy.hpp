@@ -59,9 +59,8 @@ ForwardIt2 rotate_copy(ExecutionPolicy &sep, ForwardIt1 first,
 
     auto aI = bufI.template get_access<access::mode::read>(h);
     auto aO = bufO.template get_access<access::mode::discard_write>(h);
-    using K = typename ExecutionPolicy::kernelName;
 
-    h.parallel_for<K>(range<1>{tmp.size()}, [aI, aO, rot_n](item<1> i) {
+    h.parallel_for(range<1>{tmp.size()}, [aI, aO, rot_n](item<1> i) {
       const size_t rotated_id = (i.get_id(0) + rot_n >= i.get_range(0)) ?
                                  i.get_id(0) + rot_n  - i.get_range(0)  :
                                  i.get_id(0) + rot_n;

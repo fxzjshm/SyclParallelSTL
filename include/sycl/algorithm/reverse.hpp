@@ -55,7 +55,7 @@ void reverse(ExecutionPolicy &sep, BidirIt first, BidirIt last) {
   const auto f = [vectorSize, ndRange,
             &bufI](cl::sycl::handler &h) mutable {
     const auto aI = bufI.template get_access<cl::sycl::access::mode::read_write>(h);
-    h.parallel_for<typename ExecutionPolicy::kernelName>(
+    h.parallel_for(
         ndRange, [aI, vectorSize](cl::sycl::nd_item<1> id) {
           const auto global_id = id.get_global_id(0);
           if (global_id < vectorSize / 2) {

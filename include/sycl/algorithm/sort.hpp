@@ -164,12 +164,12 @@ void sequential_sort(cl::sycl::queue q, cl::sycl::buffer<T, 1, Alloc> buf,
 
 /** sequential_sort.
  * Command group to call the sequential sort kernel */
-template <typename T, typename Alloc, class ComparableOperator, typename Name>
+template <typename T, typename Alloc, class ComparableOperator>
 void sequential_sort(cl::sycl::queue q, cl::sycl::buffer<T, 1, Alloc> buf,
                      size_t vectorSize, ComparableOperator comp) {
   auto f = [buf, vectorSize, comp](cl::sycl::handler &h) mutable {
     auto a = buf.template get_access<cl::sycl::access::mode::read_write>(h);
-    h.single_task<Name>(sort_kernel_sequential_comp<T, ComparableOperator>(
+    h.single_task(sort_kernel_sequential_comp<T, ComparableOperator>(
         a, vectorSize, comp));
   };
   q.submit(f);
@@ -193,7 +193,7 @@ void bitonic_sort(cl::sycl::queue q, cl::sycl::buffer<T, 1, Alloc> buf,
     for (int passOfStage = 0; passOfStage < stage + 1; ++passOfStage) {
       auto f = [=](cl::sycl::handler &h) mutable {
         auto a = buf.template get_access<cl::sycl::access::mode::read_write>(h);
-        h.parallel_for<sort_kernel_bitonic<T>>(
+        h.parallel_for(
             cl::sycl::range<1>{r},
             [a, stage, passOfStage](cl::sycl::item<1> it) {
               int sortIncreasing = 1;
@@ -239,7 +239,7 @@ void bitonic_sort(cl::sycl::queue q, cl::sycl::buffer<T, 1, Alloc> buf,
 /* bitonic_sort.
  * Performs a bitonic sort on the given buffer
  */
-template <typename T, typename Alloc, class ComparableOperator, typename Name>
+template <typename T, typename Alloc, class ComparableOperator>
 void bitonic_sort(cl::sycl::queue q, cl::sycl::buffer<T, 1, Alloc> buf,
                   size_t vectorSize, ComparableOperator comp) {
   int numStages = 0;
@@ -254,7 +254,7 @@ void bitonic_sort(cl::sycl::queue q, cl::sycl::buffer<T, 1, Alloc> buf,
     for (int passOfStage = 0; passOfStage < stage + 1; ++passOfStage) {
       auto f = [=](cl::sycl::handler &h) mutable {
         auto a = buf.template get_access<cl::sycl::access::mode::read_write>(h);
-        h.parallel_for<Name>(
+        h.parallel_for(
             cl::sycl::range<1>{r},
             [a, stage, passOfStage, comp](cl::sycl::item<1> it) {
               int sortIncreasing = 1;
@@ -323,13 +323,11 @@ void sort(ExecutionPolicy &sep, RandomIt first, RandomIt last, CompareOp comp) {
   
   if (impl::isPowerOfTwo(vectorSize)) {
     sycl::impl::bitonic_sort<
-        type_, allocator_, CompareOp,
-        bitonic_sort_name<typename ExecutionPolicy::kernelName>>(
+        type_, allocator_, CompareOp>(
         q, buf, vectorSize, comp);
   } else {
     sycl::impl::sequential_sort<
-        type_, allocator_, CompareOp,
-        sequential_sort_name<typename ExecutionPolicy::kernelName>>(
+        type_, allocator_, CompareOp>(
         q, buf, vectorSize, comp);
   }
 }

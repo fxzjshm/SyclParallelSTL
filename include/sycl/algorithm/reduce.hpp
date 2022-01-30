@@ -79,7 +79,7 @@ typename std::iterator_traits<Iterator>::value_type reduce(
                        cl::sycl::access::target::local>
         scratch(ndRange.get_local_range(), h);
 
-    h.parallel_for<typename ExecutionPolicy::kernelName>(
+    h.parallel_for(
         ndRange, [aI, scratch, local, length, bop](cl::sycl::nd_item<1> id) {
           auto r = ReductionStrategy<T>(local, length, id, scratch);
           r.workitem_get_from(aI);

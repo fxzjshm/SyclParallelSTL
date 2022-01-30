@@ -80,7 +80,7 @@ T transform_reduce(ExecutionPolicy& exec, InputIterator first,
                          cl::sycl::access::target::local>
           scratch(ndRange.get_local_range(), h);
 
-      h.parallel_for<typename ExecutionPolicy::kernelName>(
+      h.parallel_for(
           ndRange, [aI, aR, scratch, passes, local, length, unary_op, binary_op](
                  cl::sycl::nd_item<1> id) {
             auto r = ReductionStrategy<T>(local, length, id, scratch);

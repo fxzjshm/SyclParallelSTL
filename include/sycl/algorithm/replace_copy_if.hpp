@@ -66,7 +66,7 @@ ForwardIt2 replace_copy_if(ExecutionPolicy &sep, ForwardIt1 first,
 
     const auto aI = bufI.template get_access<cl::sycl::access::mode::read>(h);
     const auto aO = bufO.template get_access<cl::sycl::access::mode::write>(h);
-    h.parallel_for<typename ExecutionPolicy::kernelName>(
+    h.parallel_for(
         ndRange, [aI, aO, vectorSize, p, new_val](cl::sycl::nd_item<1> id) {
           const auto global_id = id.get_global_id(0);
           const auto orig_value = aI[global_id];

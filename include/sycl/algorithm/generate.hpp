@@ -57,7 +57,7 @@ void generate(ExecutionPolicy &sep, ForwardIt first, ForwardIt last,
   const auto f = [vectorSize, ndRange, &bufI,
             g](cl::sycl::handler &h) mutable {
     const auto aI = bufI.template get_access<cl::sycl::access::mode::read_write>(h);
-    h.parallel_for<typename ExecutionPolicy::kernelName>(
+    h.parallel_for(
         ndRange, [aI, g, vectorSize](cl::sycl::nd_item<1> id) {
           if (id.get_global_id(0) < vectorSize) {
             aI[id.get_global_id(0)] = g();

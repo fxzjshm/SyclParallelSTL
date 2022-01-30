@@ -149,7 +149,7 @@ OutputIterator transform(ExecutionPolicy &sep, cl::sycl::queue &q,
     auto a1 = buf1.template get_access<cl::sycl::access::mode::read>(h);
     auto a2 = buf2.template get_access<cl::sycl::access::mode::read>(h);
     auto aO = res.template get_access<cl::sycl::access::mode::write>(h);
-    h.parallel_for<typename ExecutionPolicy::kernelName>(
+    h.parallel_for(
         ndRange, [a1, a2, aO, op, n](cl::sycl::nd_item<1> id) {
           if (id.get_global_id(0) < n) {
             aO[id.get_global_id(0)] =
@@ -182,7 +182,7 @@ void transform(ExecutionPolicy &sep, cl::sycl::queue &q, Buffer &buf1,
     auto a1 = buf1.template get_access<cl::sycl::access::mode::read>(h);
     auto a2 = buf2.template get_access<cl::sycl::access::mode::read>(h);
     auto aO = res.template get_access<cl::sycl::access::mode::write>(h);
-    h.parallel_for<class TransformAlgorithm>(
+    h.parallel_for(
         ndRange, [a1, a2, aO, op, n](cl::sycl::nd_item<1> id) {
           if (id.get_global_id(0) < n) {
             aO[id.get_global_id(0)] =

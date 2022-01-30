@@ -83,7 +83,7 @@ OutputIterator inclusive_scan(ExecutionPolicy &sep, InputIterator b,
           inBuf->template get_access<cl::sycl::access::mode::read_write>(h);
       auto aO =
           outBuf->template get_access<cl::sycl::access::mode::read_write>(h);
-      h.parallel_for<typename ExecutionPolicy::kernelName>(
+      h.parallel_for(
           ndRange, [aI, aO, bop, vectorSize, i](cl::sycl::nd_item<1> id) {
             size_t td = 1 << (i - 1);
             size_t m_id = id.get_global_id(0);
