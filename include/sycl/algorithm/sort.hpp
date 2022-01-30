@@ -116,10 +116,10 @@ class sort_kernel_sequential_comp {
       : a_(a), vS_(vectorSize), comp_(comp){};
 
   // Simple sequential sort
-  void operator()() {
+  void operator()() const {
     for (size_t i = 0; i < vS_; i++) {
       for (size_t j = 1; j < vS_; j++) {
-        if (comp_(a_[j - 1], a_[j])) {
+        if (!comp_(a_[j - 1], a_[j])) {
           sort_swap<T>(a_[j - 1], a_[j]);
         }
       }
@@ -281,11 +281,11 @@ void bitonic_sort(cl::sycl::queue q, cl::sycl::buffer<T, 1, Alloc> buf,
               T lesser;
 
               if (comp(leftElement, rightElement)) {
-                greater = leftElement;
-                lesser = rightElement;
-              } else {
                 greater = rightElement;
                 lesser = leftElement;
+              } else {
+                greater = leftElement;
+                lesser = rightElement;
               }
 
               a[leftId] = sortIncreasing ? lesser : greater;

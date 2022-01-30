@@ -83,9 +83,10 @@ TEST_F(SortAlgorithm, TestSycl2Sort) {
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class SortAlgorithm2> snp(q);
-  sort(snp, v.begin(), v.end(), [=](int a, int b) { return a >= b; });
+  auto cmp = [=](int a, int b) { return a >= b; };
+  sort(snp, v.begin(), v.end(), cmp);
 
-  EXPECT_TRUE(std::is_sorted(v.begin(), v.end()));
+  EXPECT_TRUE(std::is_sorted(v.begin(), v.end(), cmp));
 }
 
 TEST_F(SortAlgorithm, TestSycl3Sort) {
@@ -93,7 +94,8 @@ TEST_F(SortAlgorithm, TestSycl3Sort) {
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class SortAlgorithm3> snp(q);
-  sort(snp, v.begin(), v.end(), [=](int a, int b) { return a >= b; });
+  auto cmp = [=](int a, int b) { return a >= b; };
+  sort(snp, v.begin(), v.end(), cmp);
 
-  EXPECT_TRUE(std::is_sorted(v.begin(), v.end()));
+  EXPECT_TRUE(std::is_sorted(v.begin(), v.end(), cmp));
 }
