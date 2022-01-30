@@ -67,7 +67,7 @@ class negative_iterator_distance : public std::exception {
   virtual const char* what() const throw() {
     return "negative distance between iterator pairs";
   }
-} negative_distance;
+};
 
 /**
  *
@@ -85,7 +85,7 @@ size_t distance(InputIterator first, InputIterator last) {
     // Options: exception, or give an abs value?
     // Exception catches the error early, but possibly incorrectly, and abs
     // value catches it later but possibly in a less meaningful way...
-    throw negative_distance;
+    throw negative_iterator_distance();
     // difft_val = std::abs(difft_val);
   }
   return static_cast<size_t>(difft_val);

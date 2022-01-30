@@ -38,7 +38,7 @@ namespace sycl {
 namespace impl {
 
 
-size_t up_rounded_division(size_t x, size_t y){
+inline size_t up_rounded_division(size_t x, size_t y){
   return (x+(y-1)) / y;
 }
 
@@ -68,6 +68,7 @@ struct sycl_algorithm_descriptor {
  * Compute a valid set of parameters for buffer_mapreduce algorithm to
  * work properly
  */
+inline
 sycl_algorithm_descriptor compute_mapreduce_descriptor(cl::sycl::device device,
                                                   size_t size,
                                                   size_t sizeofB) {
@@ -327,7 +328,7 @@ B buffer_map2reduce(ExecutionPolicy &snp,
 }
 
 
-
+inline
 sycl_algorithm_descriptor compute_mapscan_descriptor(cl::sycl::device device,
                                               size_t size,
                                               size_t sizeofB) {
