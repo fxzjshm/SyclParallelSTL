@@ -183,7 +183,7 @@ B buffer_mapreduce(ExecutionPolicy &snp,
   cl::sycl::buffer<B, 1> output_buff { cl::sycl::range<1> { d.nb_work_group } };
 
   q.submit([&] (cl::sycl::handler &cgh) {
-    cl::sycl::range<1> rg { d.nb_work_group * d.nb_work_item };
+    cl::sycl::range<1> rg { d.nb_work_group };
     cl::sycl::range<1> ri { d.nb_work_item };
     auto input = input_buff.template get_access
       <cl::sycl::access::mode::read>(cgh);
@@ -194,10 +194,10 @@ B buffer_mapreduce(ExecutionPolicy &snp,
       sum { cl::sycl::range<1>(d.nb_work_item), cgh };
     cgh.parallel_for_work_group<typename ExecutionPolicy::kernelName>(rg, ri, [=](cl::sycl::group<1> grp) {
       size_t group_id = grp.get_id(0);
-      //assert(group_id < d.nb_work_group);
+      assert(group_id < d.nb_work_group);
       size_t group_begin = group_id * d.size_per_work_group;
       size_t group_end   = min((group_id+1) * d.size_per_work_group, d.size);
-      //assert(group_begin < group_end); //< as we properly selected the
+      assert(group_begin < group_end); //< as we properly selected the
                                        //  number of work_group
       grp.parallel_for_work_item([&](cl::sycl::h_item<1> id) {
         size_t local_id = id.get_local_id(0);
@@ -275,7 +275,7 @@ B buffer_map2reduce(ExecutionPolicy &snp,
 
   q.submit([&] (cl::sycl::handler &cgh) {
     cl::sycl::nd_range<1> rng
-      { cl::sycl::range<1>{ d.nb_work_group * d.nb_work_item },
+      { cl::sycl::range<1>{ d.nb_work_group },
         cl::sycl::range<1>{ d.nb_work_item } };
     auto input1  = input_buff1.template get_access
       <cl::sycl::access::mode::read>(cgh);
@@ -289,10 +289,10 @@ B buffer_map2reduce(ExecutionPolicy &snp,
     cgh.parallel_for_work_group<typename ExecutionPolicy::kernelName>(
         rng.get_global_range(), rng.get_local_range(), [=](cl::sycl::group<1> grp) {
       size_t group_id = grp.get_id(0);
-      //assert(group_id < d.nb_work_group);
+      assert(group_id < d.nb_work_group);
       size_t group_begin = group_id * d.size_per_work_group;
       size_t group_end = min((group_id+1) * d.size_per_work_group, d.size);
-      //assert(group_begin < group_end); // as we properly selected the
+      assert(group_begin < group_end); // as we properly selected the
                                          // number of work_group
       grp.parallel_for_work_item([&](cl::sycl::h_item<1> id) {
         size_t local_id = id.get_local_id(0);
@@ -378,7 +378,7 @@ void buffer_mapscan(ExecutionPolicy &snp,
   //WARNING: nb_work_group is not bounded by max_compute_units
   auto scan = sycl::helpers::make_temp_buffer<B>( d.nb_work_group );
   //cl::sycl::buffer<B, 1> scan = { cl::sycl::range<1> { d.nb_work_group } };
-  cl::sycl::range<1> rng_wg {d.nb_work_group * d.nb_work_item};
+  cl::sycl::range<1> rng_wg {d.nb_work_group};
   cl::sycl::range<1> rng_wi {d.nb_work_item};
 
   q.submit([&] (cl::sycl::handler &cgh) {
@@ -409,6 +409,8 @@ void buffer_mapscan(ExecutionPolicy &snp,
         for (size_t gpos = group_begin + local_id, lpos = local_id;
             gpos < group_end;
             gpos += d.nb_work_item, lpos += d.nb_work_item) {
+          assert(gpos < input.get_count());
+          assert(lpos < scratch.get_count());
           scratch[lpos] = map(input[gpos]);
         }
       });
@@ -420,9 +422,11 @@ void buffer_mapscan(ExecutionPolicy &snp,
         size_t local_pos = local_id * d.size_per_work_item;
         size_t local_end = min((local_id+1) * d.size_per_work_item, local_size);
         if (local_pos < local_end) {
+          assert(local_pos < scratch.get_size());
           B acc = scratch[local_pos];
           local_pos++;
           for (; local_pos < local_end; local_pos++) {
+            assert(local_pos < scratch.get_size());
             acc = red(acc, scratch[local_pos]);
             scratch[local_pos] = acc;
           }
@@ -435,9 +439,11 @@ void buffer_mapscan(ExecutionPolicy &snp,
         size_t local_pos = d.size_per_work_item - 1;
         if (local_pos < local_size)
         {
+          assert(local_pos < scratch.get_size());
           B acc = scratch[local_pos];
           local_pos += d.size_per_work_item;
           for (; local_pos < local_size; local_pos += d.size_per_work_item) {
+            assert(local_pos < scratch.get_size());
             acc = red(acc, scratch[local_pos]);
             scratch[local_pos] = acc;
           }
@@ -453,8 +459,11 @@ void buffer_mapscan(ExecutionPolicy &snp,
           size_t local_end = min((local_id+1) * d.size_per_work_item - 1,
                                  local_size);
           if (local_pos < local_end) {
+            assert(local_pos > 0);
+            assert(local_pos - 1 < scratch.get_size());
             B acc = scratch[local_pos - 1];
             for (; local_pos < local_end; local_pos++) {
+              assert(local_pos - 1 < scratch.get_size());
               scratch[local_pos] = red(acc, scratch[local_pos]);
             }
           }
@@ -469,6 +478,8 @@ void buffer_mapscan(ExecutionPolicy &snp,
         for (size_t gpos = group_begin + local_id, lpos = local_id;
             gpos < group_end;
             gpos+=d.nb_work_item, lpos+=d.nb_work_item) {
+          assert(gpos < output.get_count());
+          assert(lpos < scratch.get_size());
           output[gpos] = scratch[lpos];
         }
       });
@@ -503,10 +514,10 @@ void buffer_mapscan(ExecutionPolicy &snp,
                                           [=](cl::sycl::group<1> grp) {
       size_t group_id = grp.get_id(0);
       B acc = read_scan[group_id];
-      //assert(group_id < d.nb_work_group);
+      assert(group_id < d.nb_work_group);
       size_t group_begin = group_id * d.size_per_work_group;
       size_t group_end   = min((group_id+1) * d.size_per_work_group, d.size);
-      //assert(group_begin < group_end); //  as we properly selected the
+      assert(group_begin < group_end); //  as we properly selected the
                                          //  number of work_group
 
       grp.parallel_for_work_item([&](cl::sycl::h_item<1> id) {
