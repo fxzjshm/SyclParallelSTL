@@ -52,12 +52,15 @@ template <class ExecutionPolicy, class Iterator, class OutputIterator,
           class UnaryOperation>
 OutputIterator transform(ExecutionPolicy &sep, Iterator b, Iterator e,
                          OutputIterator out, UnaryOperation op) {
+  if (std::distance(b, e) == 0) {
+      return out;
+  }
   {
     cl::sycl::queue q(sep.get_queue());
     auto device = q.get_device();
     auto bufI = sycl::helpers::make_const_buffer(b, e);
     auto n = bufI.get_count();
-    auto bufO = sycl::helpers::make_buffer(out, out + bufI.get_count());
+    auto bufO = sycl::helpers::make_buffer(out, out + n);
     auto vectorSize = bufI.get_count();
     const auto ndRange = sep.calculateNdRange(vectorSize);
     auto f = [vectorSize, ndRange, &bufI, &bufO, op](
@@ -91,6 +94,9 @@ template <class ExecutionPolicy, class InputIterator1, class InputIterator2,
 OutputIterator transform(ExecutionPolicy &sep, InputIterator1 first1,
                          InputIterator1 last1, InputIterator2 first2,
                          OutputIterator result, BinaryOperation op) {
+  if (std::distance(first1, last1) == 0) {
+      return result;
+  }
   cl::sycl::queue q(sep.get_queue());
   auto device = q.get_device();
   auto buf1 = sycl::helpers::make_const_buffer(first1, last1);

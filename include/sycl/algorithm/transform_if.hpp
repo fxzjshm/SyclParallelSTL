@@ -28,6 +28,11 @@ OutputIterator transform_if(
     ExecutionPolicy& exec, InputIterator1 first, InputIterator1 last, InputIterator2 stencil,
     OutputIterator result, UnaryFunction function, Predicate predicate) {
 
+  auto count = std::distance(first, last);
+  if (count == 0) {
+      return result;
+  }
+
   cl::sycl::queue q(exec.get_queue());
   auto device = q.get_device();
   auto bufI = sycl::helpers::make_const_buffer(first, last);

@@ -137,6 +137,12 @@ OutputIterator exclusive_scan(ExecutionPolicy &snp, InputIterator b,
   cl::sycl::queue q(snp.get_queue());
   auto device = q.get_device();
   auto size = sycl::helpers::distance(b, e);
+  if (size == 0 ){
+      return o;
+  } else if (size == 1) {
+      *o++ = init;
+      return o;
+  }
   using value_type = typename std::iterator_traits<InputIterator>::value_type;
 #ifdef TRISYCL_CL_LANGUAGE_VERSION
   std::vector<value_type> vect { b, e };
