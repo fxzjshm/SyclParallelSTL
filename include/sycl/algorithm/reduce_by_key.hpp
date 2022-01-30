@@ -8,6 +8,7 @@
 // Detail header
 #include <sycl/helpers/sycl_buffers.hpp>
 
+#include <functional>
 #include <vector>
 #include <boost/iterator/zip_iterator.hpp>
 #include <sycl/algorithm/exclusive_scan.hpp>
@@ -74,12 +75,12 @@ std::pair<OutputIterator1, OutputIterator2>
     
     // compute head flags
     std::vector<FlagType> head_flags(n);
-    sycl::impl::transform(exec, keys_first, keys_last - 1, keys_first + 1, head_flags.begin() + 1, std::not2(binary_pred));
+    sycl::impl::transform(exec, keys_first, keys_last - 1, keys_first + 1, head_flags.begin() + 1, std::not_fn(binary_pred));
     head_flags[0] = 1;
 
     // compute tail flags
     std::vector<FlagType> tail_flags(n); //COPY INSTEAD OF TRANSFORM
-    sycl::impl::transform(exec, keys_first, keys_last - 1, keys_first + 1, tail_flags.begin(), std::not2(binary_pred));
+    sycl::impl::transform(exec, keys_first, keys_last - 1, keys_first + 1, tail_flags.begin(), std::not_fn(binary_pred));
     tail_flags[n-1] = 1;
 
     // scan the values by flag
@@ -94,7 +95,7 @@ std::pair<OutputIterator1, OutputIterator2>
          std::tuple(ValueType(), FlagType()),
          detail::reduce_by_key_functor<ValueType, FlagType, BinaryFunction>(binary_op));
 
-    sycl::impl::exclusive_scan(exec, tail_flags.begin(), tail_flags.end(), scanned_tail_flags.begin(), FlagType(0), std::plus());
+    sycl::impl::exclusive_scan(exec, tail_flags.begin(), tail_flags.end(), scanned_tail_flags.begin(), FlagType(0), std::plus<FlagType>());
 
     // number of unique keys
     FlagType N = scanned_tail_flags[n - 1] + 1;
@@ -104,24 +105,6 @@ std::pair<OutputIterator1, OutputIterator2>
     sycl::impl::scatter_if(exec, scanned_values.begin(), scanned_values.end(), scanned_tail_flags.begin(), tail_flags.begin(), values_output);
 
     return std::make_pair(keys_output + N, values_output + N); 
-} // end reduce_by_key()
-
-
-template<typename ExecutionPolicy,
-         typename InputIterator1,
-         typename InputIterator2,
-         typename OutputIterator1,
-         typename OutputIterator2>
-std::pair<OutputIterator1, OutputIterator2>
-    reduce_by_key(ExecutionPolicy &exec,
-                  InputIterator1 keys_first, 
-                  InputIterator1 keys_last,
-                  InputIterator2 values_first,
-                  OutputIterator1 keys_output,
-                  OutputIterator2 values_output)
-{
-  // use equal_to<KeyType> as default BinaryPredicate
-  return sycl::impl::reduce_by_key(exec, keys_first, keys_last, values_first, keys_output, values_output, std::equal_to());
 } // end reduce_by_key()
 
 
@@ -141,7 +124,27 @@ std::pair<OutputIterator1, OutputIterator2>
                   BinaryPredicate binary_pred)
 {
   // use plus<T> as default BinaryFunction
-  return sycl::impl::reduce_by_key(exec, keys_first, keys_last, values_first, keys_output, values_output, binary_pred, std::plus());
+  typedef typename std::iterator_traits<InputIterator2>::value_type ValueType;
+  return sycl::impl::reduce_by_key(exec, keys_first, keys_last, values_first, keys_output, values_output, binary_pred, std::plus<ValueType>());
+} // end reduce_by_key()
+
+
+template<typename ExecutionPolicy,
+         typename InputIterator1,
+         typename InputIterator2,
+         typename OutputIterator1,
+         typename OutputIterator2>
+std::pair<OutputIterator1, OutputIterator2>
+    reduce_by_key(ExecutionPolicy &exec,
+                  InputIterator1 keys_first, 
+                  InputIterator1 keys_last,
+                  InputIterator2 values_first,
+                  OutputIterator1 keys_output,
+                  OutputIterator2 values_output)
+{
+  // use equal_to<KeyType> as default BinaryPredicate
+  typedef typename std::iterator_traits<InputIterator1>::value_type KeyType;
+  return sycl::impl::reduce_by_key(exec, keys_first, keys_last, values_first, keys_output, values_output, std::equal_to<KeyType>());
 } // end reduce_by_key()
 
 }  // namespace impl
