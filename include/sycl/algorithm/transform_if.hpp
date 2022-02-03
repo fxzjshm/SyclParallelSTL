@@ -42,9 +42,9 @@ OutputIterator transform_if(
 
   auto vectorSize = count;
   const auto ndRange = exec.calculateNdRange(vectorSize);
-  auto transform_if_do_copy = [vectorSize, ndRange, &first, &stencil, &result, predicate, function](cl::sycl::handler &h) {
+  auto transform_if_do_copy = [vectorSize, ndRange, first, stencil, result, predicate, function](cl::sycl::handler &h) {
     h.parallel_for(
-        ndRange, [&first, &stencil, &result, predicate, function](cl::sycl::nd_item<1> id) {
+        ndRange, [first, stencil, result, predicate, function](cl::sycl::nd_item<1> id) {
           if (predicate(stencil[id.get_global_id(0)])) {
             result[id.get_global_id(0)] = function(first[id.get_global_id(0)]);
           }
