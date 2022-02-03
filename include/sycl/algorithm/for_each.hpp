@@ -73,9 +73,9 @@ void for_each(ExecutionPolicy &sep, Iterator b, Iterator e, UnaryFunction op) {
     auto device = q.get_device();
     auto vectorSize = std::distance(b, e);
     const auto ndRange = sep.calculateNdRange(vectorSize);
-    auto f = [vectorSize, ndRange, &b, op](cl::sycl::handler &h) mutable {
+    auto f = [vectorSize, ndRange, b, op](cl::sycl::handler &h) mutable {
       h.parallel_for(
-          ndRange, [op, vectorSize, &b](cl::sycl::nd_item<1> id) {
+          ndRange, [op, vectorSize, b](cl::sycl::nd_item<1> id) {
             if (id.get_global_id(0) < vectorSize) {
               op(*(b + id.get_global_id(0)));
             }
