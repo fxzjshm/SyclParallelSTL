@@ -409,8 +409,8 @@ void buffer_mapscan(ExecutionPolicy &snp,
         for (size_t gpos = group_begin + local_id, lpos = local_id;
             gpos < group_end;
             gpos += d.nb_work_item, lpos += d.nb_work_item) {
-          assert(gpos < input.get_count());
-          assert(lpos < scratch.get_count());
+          assert(gpos < input.size());
+          assert(lpos < scratch.size());
           scratch[lpos] = map(input[gpos]);
         }
       });
@@ -422,11 +422,11 @@ void buffer_mapscan(ExecutionPolicy &snp,
         size_t local_pos = local_id * d.size_per_work_item;
         size_t local_end = min((local_id+1) * d.size_per_work_item, local_size);
         if (local_pos < local_end) {
-          assert(local_pos < scratch.get_size());
+          assert(local_pos < scratch.size());
           B acc = scratch[local_pos];
           local_pos++;
           for (; local_pos < local_end; local_pos++) {
-            assert(local_pos < scratch.get_size());
+            assert(local_pos < scratch.size());
             acc = red(acc, scratch[local_pos]);
             scratch[local_pos] = acc;
           }
@@ -439,11 +439,11 @@ void buffer_mapscan(ExecutionPolicy &snp,
         size_t local_pos = d.size_per_work_item - 1;
         if (local_pos < local_size)
         {
-          assert(local_pos < scratch.get_size());
+          assert(local_pos < scratch.size());
           B acc = scratch[local_pos];
           local_pos += d.size_per_work_item;
           for (; local_pos < local_size; local_pos += d.size_per_work_item) {
-            assert(local_pos < scratch.get_size());
+            assert(local_pos < scratch.size());
             acc = red(acc, scratch[local_pos]);
             scratch[local_pos] = acc;
           }
@@ -460,10 +460,10 @@ void buffer_mapscan(ExecutionPolicy &snp,
                                  local_size);
           if (local_pos < local_end) {
             assert(local_pos > 0);
-            assert(local_pos - 1 < scratch.get_size());
+            assert(local_pos - 1 < scratch.size());
             B acc = scratch[local_pos - 1];
             for (; local_pos < local_end; local_pos++) {
-              assert(local_pos - 1 < scratch.get_size());
+              assert(local_pos - 1 < scratch.size());
               scratch[local_pos] = red(acc, scratch[local_pos]);
             }
           }
@@ -478,8 +478,8 @@ void buffer_mapscan(ExecutionPolicy &snp,
         for (size_t gpos = group_begin + local_id, lpos = local_id;
             gpos < group_end;
             gpos+=d.nb_work_item, lpos+=d.nb_work_item) {
-          assert(gpos < output.get_count());
-          assert(lpos < scratch.get_size());
+          assert(gpos < output.size());
+          assert(lpos < scratch.size());
           output[gpos] = scratch[lpos];
         }
       });
