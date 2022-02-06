@@ -67,7 +67,7 @@ OutputIterator copy_if(
         ndRange, [aI, aIndices, aStencil, aO, predicate, copied_element_count](cl::sycl::nd_item<1> id) {
           if (predicate(aStencil[id.get_global_id(0)])) {
             auto idx = aIndices[id.get_global_id(0)];
-            assert(idx < copied_element_count);
+            //assert(idx < copied_element_count);
             aO[aIndices[id.get_global_id(0)]] = aI[id.get_global_id(0)];
           }
         });
