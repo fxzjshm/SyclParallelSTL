@@ -44,9 +44,11 @@ OutputIterator transform_if(
   const auto ndRange = exec.calculateNdRange(vectorSize);
   auto transform_if_do_copy = [vectorSize, ndRange, first, stencil, result, predicate, function](cl::sycl::handler &h) {
     h.parallel_for(
-        ndRange, [first, stencil, result, predicate, function](cl::sycl::nd_item<1> id) {
-          if (predicate(stencil[id.get_global_id(0)])) {
-            result[id.get_global_id(0)] = function(first[id.get_global_id(0)]);
+        ndRange, [vectorSize, first, stencil, result, predicate, function](cl::sycl::nd_item<1> id) {
+          if (id.get_global_id(0) < vectorSize) {
+            if (predicate(stencil[id.get_global_id(0)])) {
+              result[id.get_global_id(0)] = function(first[id.get_global_id(0)]);
+            }
           }
         }
     );
@@ -103,10 +105,12 @@ OutputIterator transform_if(
     auto aO = bufO.template get_access<cl::sycl::access::mode::write>(h);
     h.parallel_for(
         ndRange, [aI, aIndices, aStencil, aO, predicate, function, copied_element_count](cl::sycl::nd_item<1> id) {
-          if (predicate(aStencil[id.get_global_id(0)])) {
-            auto idx = aIndices[id.get_global_id(0)];
-            //assert(idx < copied_element_count);
-            aO[aIndices[id.get_global_id(0)]] = function(aI[id.get_global_id(0)]);
+          if (id.get_global_id(0) < vectorSize) {
+            if (predicate(aStencil[id.get_global_id(0)])) {
+              auto idx = aIndices[id.get_global_id(0)];
+              //assert(idx < copied_element_count);
+              aO[aIndices[id.get_global_id(0)]] = function(aI[id.get_global_id(0)]);
+            }
           }
         });
   };

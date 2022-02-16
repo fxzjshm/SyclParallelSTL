@@ -64,11 +64,13 @@ OutputIterator copy_if(
     auto aStencil = bufStencil.template get_access<cl::sycl::access::mode::read>(h);
     auto aO = bufO.template get_access<cl::sycl::access::mode::write>(h);
     h.parallel_for(
-        ndRange, [aI, aIndices, aStencil, aO, predicate, copied_element_count](cl::sycl::nd_item<1> id) {
-          if (predicate(aStencil[id.get_global_id(0)])) {
-            auto idx = aIndices[id.get_global_id(0)];
-            //assert(idx < copied_element_count);
-            aO[aIndices[id.get_global_id(0)]] = aI[id.get_global_id(0)];
+        ndRange, [vectorSize, aI, aIndices, aStencil, aO, predicate, copied_element_count](cl::sycl::nd_item<1> id) {
+          if (id.get_global_id(0) < vectorSize) {
+            if (predicate(aStencil[id.get_global_id(0)])) {
+              auto idx = aIndices[id.get_global_id(0)];
+              //assert(idx < copied_element_count);
+              aO[aIndices[id.get_global_id(0)]] = aI[id.get_global_id(0)];
+            }
           }
         });
   };
