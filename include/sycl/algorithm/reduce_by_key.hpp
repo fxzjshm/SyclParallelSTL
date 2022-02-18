@@ -68,24 +68,29 @@ std::pair<OutputIterator1, OutputIterator2>
     if (keys_first == keys_last)
         return std::make_pair(keys_output, values_output);
 
+    typedef sycl::usm_allocator<FlagType, sycl::usm::alloc::shared> FlagTypeAllocator;
+    FlagTypeAllocator flag_type_allocator(exec.get_queue());
+    typedef sycl::usm_allocator<ValueType, sycl::usm::alloc::shared> ValueTypeAllocator;
+    ValueTypeAllocator value_type_allocator(exec.get_queue());
+
     // input size
     auto n = keys_last - keys_first;
 
     InputIterator2 values_last = values_first + n;
     
     // compute head flags
-    std::vector<FlagType> head_flags(n);
+    std::vector<FlagType, FlagTypeAllocator> head_flags(n, flag_type_allocator);
     sycl::impl::transform(exec, keys_first, keys_last - 1, keys_first + 1, head_flags.begin() + 1, std::not_fn(binary_pred));
     head_flags[0] = 1;
 
     // compute tail flags
-    std::vector<FlagType> tail_flags(n); //COPY INSTEAD OF TRANSFORM
+    std::vector<FlagType, FlagTypeAllocator> tail_flags(n, flag_type_allocator); //COPY INSTEAD OF TRANSFORM
     sycl::impl::transform(exec, keys_first, keys_last - 1, keys_first + 1, tail_flags.begin(), std::not_fn(binary_pred));
     tail_flags[n-1] = 1;
 
     // scan the values by flag
-    std::vector<ValueType> scanned_values(n);
-    std::vector<FlagType> scanned_tail_flags(n);
+    std::vector<ValueType, ValueTypeAllocator> scanned_values(n, value_type_allocator);
+    std::vector<FlagType, FlagTypeAllocator> scanned_tail_flags(n, flag_type_allocator);
     
     sycl::impl::inclusive_scan
         (exec,
