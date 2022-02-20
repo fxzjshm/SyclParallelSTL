@@ -339,6 +339,11 @@ sycl_algorithm_descriptor compute_mapscan_descriptor(cl::sycl::device device,
   size_t local_mem_size =
     device.get_info<cl::sycl::info::device::local_mem_size>();
   size_t size_per_work_group = min(size, local_mem_size / sizeofB);
+  // patch for intel/llvm(20220219) + hip + gfx906
+  // for some reason a hipErrorOutOfMemory is triggered if not divided here
+  #ifdef SYCL_IMPLEMENTATION_ONEAPI
+  size_per_work_group = max(size_per_work_group / 2, static_cast<size_t>(1));
+  #endif
   if (size_per_work_group <= 0)
     return sycl_algorithm_descriptor { size };
 
