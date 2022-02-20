@@ -47,14 +47,12 @@ template <typename ExecutionPolicy, typename ForwardIt, typename T>
 void fill(ExecutionPolicy &sep, ForwardIt b, ForwardIt e, const T &value) {
   cl::sycl::queue q { sep.get_queue() };
   auto device = q.get_device();
-  auto bufI = helpers::make_buffer( b, e );
   // copy value into a local variable, as we cannot capture it by reference
   T val = value;
-  auto vectorSize = bufI.get_count();
+  auto vectorSize = std::distance(b, e);
   const auto ndRange = sep.calculateNdRange(vectorSize);
-  auto f = [vectorSize, ndRange, &bufI, val](
-      cl::sycl::handler &h) mutable {
-    auto aI = bufI.template get_access<cl::sycl::access::mode::read_write>(h);
+  auto f = [vectorSize, ndRange, b, val] (cl::sycl::handler &h) mutable {
+    auto aI = b;
     h.parallel_for(
         ndRange, [aI, val, vectorSize](cl::sycl::nd_item<1> id) {
           if (id.get_global_id(0) < vectorSize) {
@@ -62,7 +60,7 @@ void fill(ExecutionPolicy &sep, ForwardIt b, ForwardIt e, const T &value) {
           }
         });
   };
-  q.submit(f);
+  q.submit(f).wait();
 }
 
 }  // namespace impl

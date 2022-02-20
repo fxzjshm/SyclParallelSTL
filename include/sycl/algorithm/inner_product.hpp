@@ -54,12 +54,7 @@ struct InnerProductImpl<true> {
     if (size <= 0)
       return value;
 
-    InputIt2 last2 = std::next(first2, size);
-    auto input_buff1 = sycl::helpers::make_const_buffer(first1, last1);
-    auto input_buff2 = sycl::helpers::make_const_buffer(first2, last2);
-
-    return inner_product_sequential_sycl(exec.get_queue(), input_buff1,
-                                                                               input_buff2, value, size, op1, op2);
+    return inner_product_sequential_sycl(exec.get_queue(), first1, first2, value, size, op1, op2);
   }
 };
 
@@ -194,14 +189,11 @@ T inner_product(ExecutionPolicy &snp, InputIt1 first1, InputIt1 last1,
   auto d = compute_mapreduce_descriptor(
       device, size, sizeof(value_type_1)+sizeof(value_type_2));
 
-  auto input_buff1 = sycl::helpers::make_const_buffer(first1, last1);
-  auto input_buff2 = sycl::helpers::make_const_buffer(first2, last2);
-
   auto map = [=](size_t pos, value_type_1 x, value_type_2 y) {
     return op2(x, y);
   };
 
-  return buffer_map2reduce(snp, q, input_buff1, input_buff2,
+  return buffer_map2reduce(snp, q, first1, first2,
                            value, d, map, op1 );
 }
 

@@ -49,16 +49,15 @@ ForwardIt reverse_copy(ExecutionPolicy &sep, BidirIt first, BidirIt last,
   cl::sycl::queue q{sep.get_queue()};
   const auto device = q.get_device();
 
-  auto bufI = helpers::make_buffer(first, last);
-  const auto d_last(d_first + bufI.get_count());
-  auto bufO = sycl::helpers::make_buffer(d_first, d_last);
+  const auto n = std::distance(first, last);
 
-  const auto vectorSize = bufI.get_count();
+  const auto d_last(d_first + n);
+
+  const auto vectorSize = n;
   const auto ndRange = sep.calculateNdRange(vectorSize);
-  const auto f = [vectorSize, ndRange, &bufI,
-            &bufO](cl::sycl::handler &h) mutable {
-    const auto aI = bufI.template get_access<cl::sycl::access::mode::read>(h);
-    const auto aO = bufO.template get_access<cl::sycl::access::mode::write>(h);
+  const auto f = [vectorSize, ndRange, first, d_first] (cl::sycl::handler &h) mutable {
+    const auto aI = first;
+    const auto aO = d_first;
     h.parallel_for(
         ndRange, [aI, aO, vectorSize](cl::sycl::nd_item<1> id) {
           const auto global_id = id.get_global_id(0);
@@ -67,7 +66,7 @@ ForwardIt reverse_copy(ExecutionPolicy &sep, BidirIt first, BidirIt last,
           }
         });
   };
-  q.submit(f);
+  q.submit(f).wait();
 
   return d_last;
 }

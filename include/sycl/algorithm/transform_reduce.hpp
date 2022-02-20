@@ -124,12 +124,10 @@ T transform_reduce(ExecutionPolicy& snp, InputIt b,
 
   auto d = compute_mapreduce_descriptor(device, size, sizeof(value_type));
 
-  auto input_buff = sycl::helpers::make_const_buffer(b, e);
-
   auto map = [=](size_t pos, value_type x) { return unary_op(x); };
 
 
-  return buffer_mapreduce( snp, q, input_buff, init, d, map, binary_op );
+  return buffer_mapreduce( snp, q, b, init, d, map, binary_op );
 
 }
 

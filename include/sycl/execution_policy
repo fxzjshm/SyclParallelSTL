@@ -61,6 +61,7 @@
 #include <sycl/algorithm/generate.hpp>
 #include <sycl/algorithm/reverse.hpp>
 #include <sycl/algorithm/reverse_copy.hpp>
+#include <sycl/algorithm/rotate.hpp>
 #include <sycl/algorithm/rotate_copy.hpp>
 #include <sycl/algorithm/replace_if.hpp>
 #include <sycl/algorithm/replace_copy_if.hpp>
@@ -571,7 +572,7 @@ class sycl_execution_policy {
    */
   template <class ForwardIt>
   ForwardIt rotate(ForwardIt first, ForwardIt middle, ForwardIt last) {
-    impl::rotate_copy(*this, first, middle, last, first);
+    impl::rotate(*this, first, middle, last);
     return first + (last - middle);
   }
 

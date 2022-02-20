@@ -52,29 +52,25 @@ template <class ExecutionPolicy, class Iterator, class OutputIterator,
           class UnaryOperation>
 OutputIterator transform(ExecutionPolicy &sep, Iterator b, Iterator e,
                          OutputIterator out, UnaryOperation op) {
-  if (std::distance(b, e) == 0) {
-      return out;
-  }
   {
+    auto n = std::distance(b, e);
+    if (n == 0) {
+      return out;
+    }
+
     cl::sycl::queue q(sep.get_queue());
     auto device = q.get_device();
-    auto bufI = sycl::helpers::make_const_buffer(b, e);
-    auto n = bufI.get_count();
-    auto bufO = sycl::helpers::make_buffer(out, out + n);
-    auto vectorSize = bufI.get_count();
+    auto vectorSize = n;
     const auto ndRange = sep.calculateNdRange(vectorSize);
-    auto f = [vectorSize, ndRange, &bufI, &bufO, op](
-        cl::sycl::handler &h) {
-      auto aI = bufI.template get_access<cl::sycl::access::mode::read>(h);
-      auto aO = bufO.template get_access<cl::sycl::access::mode::write>(h);
+    auto f = [vectorSize, ndRange, b, out, op] (cl::sycl::handler &h) {
       h.parallel_for(
-          ndRange, [aI, aO, op, vectorSize](cl::sycl::nd_item<1> id) {
+          ndRange, [b, out, op, vectorSize](cl::sycl::nd_item<1> id) {
             if ((id.get_global_id(0) < vectorSize)) {
-              aO[id.get_global_id(0)] = op(aI[id.get_global_id(0)]);
+              out[id.get_global_id(0)] = op(b[id.get_global_id(0)]);
             }
           });
     };
-    q.submit(f);
+    q.submit(f).wait();
     return out + n;
   }
 }
@@ -94,103 +90,23 @@ template <class ExecutionPolicy, class InputIterator1, class InputIterator2,
 OutputIterator transform(ExecutionPolicy &sep, InputIterator1 first1,
                          InputIterator1 last1, InputIterator2 first2,
                          OutputIterator result, BinaryOperation op) {
-  if (std::distance(first1, last1) == 0) {
+  auto n = std::distance(first1, last1);
+  if (n == 0) {
       return result;
   }
   cl::sycl::queue q(sep.get_queue());
   auto device = q.get_device();
-  auto buf1 = sycl::helpers::make_const_buffer(first1, last1);
-  auto n = buf1.get_count();
-  auto buf2 = sycl::helpers::make_const_buffer(first2, first2 + n);
-  auto res = sycl::helpers::make_buffer(result, result + n);
   const auto ndRange = sep.calculateNdRange(n);
-  auto f = [n, ndRange, &buf1, &buf2, &res, op](
-      cl::sycl::handler &h) mutable {
-    auto a1 = buf1.template get_access<cl::sycl::access::mode::read>(h);
-    auto a2 = buf2.template get_access<cl::sycl::access::mode::read>(h);
-    auto aO = res.template get_access<cl::sycl::access::mode::write>(h);
+  auto f = [n, ndRange, first1, first2, result, op] (cl::sycl::handler &h) mutable {
     h.parallel_for(
-        ndRange, [a1, a2, aO, op, n](cl::sycl::nd_item<1> id) {
+        ndRange, [first1, first2, result, op, n](cl::sycl::nd_item<1> id) {
           if (id.get_global_id(0) < n) {
-            aO[id.get_global_id(0)] =
-                op(a1[id.get_global_id(0)], a2[id.get_global_id(0)]);
+            result[id.get_global_id(0)] = op(first1[id.get_global_id(0)], first2[id.get_global_id(0)]);
           }
         });
   };
-  q.submit(f);
+  q.submit(f).wait();
   return result + n;
-}
-
-/** transform sycl implementation
-* @brief Function that takes a Binary Operator and applies to the given range
-* @param sep    : Execution Policy
-* @param q      : Queue
-* @param first1 : Start of the range of buffer 1
-* @param last1  : End of the range of buffer 1
-* @param first2 : Start of the range of buffer 2
-* @param result : Output iterator
-* @param op     : Binary Operator
-* @return  An iterator pointing to the last element
-*/
-template <class ExecutionPolicy, class InputIterator1, class InputIterator2,
-          class OutputIterator, class BinaryOperation>
-OutputIterator transform(ExecutionPolicy &sep, cl::sycl::queue &q,
-                         InputIterator1 first1, InputIterator1 last1,
-                         InputIterator2 first2, OutputIterator result,
-                         BinaryOperation op) {
-  auto device = q.get_device();
-  auto buf1 = sycl::helpers::make_const_buffer(first1, last1);
-  auto n = buf1.get_count();
-  auto buf2 = sycl::helpers::make_const_buffer(first2, first2 + n);
-  auto res = sycl::helpers::make_buffer(result, result + n);
-  const auto ndRange = sep.calculateNdRange(n);
-  auto f = [n, ndRange, &buf1, &buf2, &res, op](
-      cl::sycl::handler &h) mutable {
-    auto a1 = buf1.template get_access<cl::sycl::access::mode::read>(h);
-    auto a2 = buf2.template get_access<cl::sycl::access::mode::read>(h);
-    auto aO = res.template get_access<cl::sycl::access::mode::write>(h);
-    h.parallel_for(
-        ndRange, [a1, a2, aO, op, n](cl::sycl::nd_item<1> id) {
-          if (id.get_global_id(0) < n) {
-            aO[id.get_global_id(0)] =
-                op(a1[id.get_global_id(0)], a2[id.get_global_id(0)]);
-          }
-        });
-  };
-  q.submit(f);
-  return result + n;
-}
-
-/** transform sycl implementation
-* @brief Function that takes a Binary Operator and applies to the given range
-* @param sep    : Execution Policy
-* @param q      : Queue
-* @param buf1   : buffer 1
-* @param buf2   : buffer 2
-* @param res    : Output buffer
-* @param op     : Binary Operator
-* @return  An iterator pointing to the last element
-*/
-template <class ExecutionPolicy, class Buffer, class BinaryOperation>
-void transform(ExecutionPolicy &sep, cl::sycl::queue &q, Buffer &buf1,
-               Buffer &buf2, Buffer &res, BinaryOperation op) {
-  auto device = q.get_device();
-  auto n = buf1.get_count();
-  const auto ndRange = sep.calculateNdRange(n);
-  auto f = [n, ndRange, &buf1, &buf2, &res, op](
-      cl::sycl::handler &h) mutable {
-    auto a1 = buf1.template get_access<cl::sycl::access::mode::read>(h);
-    auto a2 = buf2.template get_access<cl::sycl::access::mode::read>(h);
-    auto aO = res.template get_access<cl::sycl::access::mode::write>(h);
-    h.parallel_for(
-        ndRange, [a1, a2, aO, op, n](cl::sycl::nd_item<1> id) {
-          if (id.get_global_id(0) < n) {
-            aO[id.get_global_id(0)] =
-                op(a1[id.get_global_id(0)], a2[id.get_global_id(0)]);
-          }
-        });
-  };
-  q.submit(f);
 }
 
 }  // namespace impl

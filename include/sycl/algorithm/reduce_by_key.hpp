@@ -68,9 +68,9 @@ std::pair<OutputIterator1, OutputIterator2>
     if (keys_first == keys_last)
         return std::make_pair(keys_output, values_output);
 
-    typedef sycl::usm_allocator<FlagType, sycl::usm::alloc::shared> FlagTypeAllocator;
+    typedef cl::sycl::usm_allocator<FlagType, cl::sycl::usm::alloc::shared> FlagTypeAllocator;
     FlagTypeAllocator flag_type_allocator(exec.get_queue());
-    typedef sycl::usm_allocator<ValueType, sycl::usm::alloc::shared> ValueTypeAllocator;
+    typedef cl::sycl::usm_allocator<ValueType, cl::sycl::usm::alloc::shared> ValueTypeAllocator;
     ValueTypeAllocator value_type_allocator(exec.get_queue());
 
     // input size

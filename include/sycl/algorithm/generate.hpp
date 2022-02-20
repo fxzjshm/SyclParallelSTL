@@ -49,14 +49,12 @@ void generate(ExecutionPolicy &sep, ForwardIt first, ForwardIt last,
   cl::sycl::queue q{sep.get_queue()};
   const auto device = q.get_device();
 
-  auto bufI = helpers::make_buffer(first, last);
-  const auto vectorSize = bufI.get_count();
+  const auto vectorSize = std::distance(first, last);
 
   const auto ndRange = sep.calculateNdRange(vectorSize);
 
-  const auto f = [vectorSize, ndRange, &bufI,
-            g](cl::sycl::handler &h) mutable {
-    const auto aI = bufI.template get_access<cl::sycl::access::mode::read_write>(h);
+  const auto f = [vectorSize, ndRange, first, g] (cl::sycl::handler &h) mutable {
+    const auto aI = first;
     h.parallel_for(
         ndRange, [aI, g, vectorSize](cl::sycl::nd_item<1> id) {
           if (id.get_global_id(0) < vectorSize) {
@@ -64,7 +62,7 @@ void generate(ExecutionPolicy &sep, ForwardIt first, ForwardIt last,
           }
         });
   };
-  q.submit(f);
+  q.submit(f).wait();
 }
 
 }  // namespace impl

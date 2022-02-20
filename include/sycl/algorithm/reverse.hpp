@@ -48,13 +48,11 @@ template <class ExecutionPolicy, class BidirIt>
 void reverse(ExecutionPolicy &sep, BidirIt first, BidirIt last) {
   cl::sycl::queue q{sep.get_queue()};
   const auto device = q.get_device();
-  auto bufI = helpers::make_buffer(first, last);
 
-  const auto vectorSize = bufI.get_count();
+  const auto vectorSize = std::distance(first, last);
   const auto ndRange = sep.calculateNdRange(vectorSize / 2);
-  const auto f = [vectorSize, ndRange,
-            &bufI](cl::sycl::handler &h) mutable {
-    const auto aI = bufI.template get_access<cl::sycl::access::mode::read_write>(h);
+  const auto f = [vectorSize, ndRange, first](cl::sycl::handler &h) mutable {
+    const auto aI = first;
     h.parallel_for(
         ndRange, [aI, vectorSize](cl::sycl::nd_item<1> id) {
           const auto global_id = id.get_global_id(0);
@@ -63,7 +61,7 @@ void reverse(ExecutionPolicy &sep, BidirIt first, BidirIt last) {
           }
         });
   };
-  q.submit(f);
+  q.submit(f).wait();
 }
 
 }  // namespace impl

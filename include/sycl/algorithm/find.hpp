@@ -149,10 +149,8 @@ InputIt find_impl(ExecutionPolicy &snp, InputIt b, InputIt e,
   const auto d =
       compute_mapreduce_descriptor(device, size, sizeof(std::size_t));
 
-  const auto input_buff = sycl::helpers::make_const_buffer(b, e);
-
   const auto pos = buffer_mapreduce(
-      snp, q, input_buff, size, d,
+      snp, q, b, size, d,
       [p, size](std::size_t pos, value_type x) { return p(x) ? pos : size; },
       [](std::size_t x, std::size_t y) { return cl::sycl::min(x, y); });
 

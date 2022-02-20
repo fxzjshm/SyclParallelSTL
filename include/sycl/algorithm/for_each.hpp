@@ -43,29 +43,6 @@ namespace impl {
  * Implementation of the command group that submits a for_each kernel.
  * The kernel is implemented as a lambda.
  */
-template <class ExecutionPolicy, class Iterator, class UnaryFunction, class T = typename std::iterator_traits<Iterator>::value_type,
-          typename = typename std::enable_if<std::is_assignable<decltype( *std::declval<Iterator>() ),T>::value>::value>
-void for_each(ExecutionPolicy &sep, Iterator b, Iterator e, UnaryFunction op) {
-  {
-    cl::sycl::queue q(sep.get_queue());
-    auto device = q.get_device();
-    auto bufI = sycl::helpers::make_buffer(b, e);
-    auto vectorSize = bufI.get_count();
-    const auto ndRange = sep.calculateNdRange(vectorSize);
-    auto f = [vectorSize, ndRange, &bufI, op](
-        cl::sycl::handler &h) mutable {
-      auto aI = bufI.template get_access<cl::sycl::access::mode::read_write>(h);
-      h.parallel_for(
-          ndRange, [aI, op, vectorSize](cl::sycl::nd_item<1> id) {
-            if (id.get_global_id(0) < vectorSize) {
-              op(aI[id.get_global_id(0)]);
-            }
-          });
-    };
-    q.submit(f);
-  }
-}
-
 template <class ExecutionPolicy, class Iterator, class UnaryFunction>
 void for_each(ExecutionPolicy &sep, Iterator b, Iterator e, UnaryFunction op) {
   {
@@ -73,11 +50,12 @@ void for_each(ExecutionPolicy &sep, Iterator b, Iterator e, UnaryFunction op) {
     auto device = q.get_device();
     auto vectorSize = std::distance(b, e);
     const auto ndRange = sep.calculateNdRange(vectorSize);
-    auto f = [vectorSize, ndRange, b, op](cl::sycl::handler &h) mutable {
+    auto f = [vectorSize, ndRange, b, op] (cl::sycl::handler &h) mutable {
+      auto aI = b;
       h.parallel_for(
-          ndRange, [op, vectorSize, b](cl::sycl::nd_item<1> id) {
+          ndRange, [aI, op, vectorSize](cl::sycl::nd_item<1> id) {
             if (id.get_global_id(0) < vectorSize) {
-              op(*(b + id.get_global_id(0)));
+              op(aI[id.get_global_id(0)]);
             }
           });
     };

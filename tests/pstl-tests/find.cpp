@@ -65,7 +65,7 @@ TEST_F(FindAlgorithm, TestSyclFind) {
 
   EXPECT_TRUE(res_std == res_sycl);
 }
-
+/*
 TEST_F(FindAlgorithm, TestSyclListFind) {
   std::list<float> v;
   int n_elems = 128;
@@ -91,7 +91,7 @@ TEST_F(FindAlgorithm, TestSyclListFind) {
 
   EXPECT_TRUE(res_std == res_sycl);
 }
-
+*/
 TEST_F(FindAlgorithm, TestSyclFindIf) {
   std::vector<float> v;
   int n_elems = 128;
@@ -118,7 +118,7 @@ TEST_F(FindAlgorithm, TestSyclFindIf) {
 
   EXPECT_TRUE(res_std == res_sycl);
 }
-
+/*
 TEST_F(FindAlgorithm, TestSyclListFindIf) {
   std::list<float> v;
   int n_elems = 128;
@@ -145,7 +145,7 @@ TEST_F(FindAlgorithm, TestSyclListFindIf) {
 
   EXPECT_TRUE(res_std == res_sycl);
 }
-
+*/
 TEST_F(FindAlgorithm, TestSyclFindIfNot) {
   std::vector<float> v;
   int n_elems = 128;
@@ -172,7 +172,7 @@ TEST_F(FindAlgorithm, TestSyclFindIfNot) {
 
   EXPECT_TRUE(res_std == res_sycl);
 }
-
+/*
 TEST_F(FindAlgorithm, TestSyclListFindIfNot) {
   std::list<float> v;
   int n_elems = 128;
@@ -199,7 +199,7 @@ TEST_F(FindAlgorithm, TestSyclListFindIfNot) {
 
   EXPECT_TRUE(res_std == res_sycl);
 }
-
+*/
 TEST_F(FindAlgorithm, TestSyclFindNotFound) {
   int n_elems = 128;
   std::vector<float> v(n_elems, 9.0f);

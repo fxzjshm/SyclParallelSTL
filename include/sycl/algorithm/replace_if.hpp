@@ -48,17 +48,15 @@ void replace_if(ExecutionPolicy &sep, ForwardIt first, ForwardIt last,
                 UnaryPredicate p, const T &new_value) {
   cl::sycl::queue q{sep.get_queue()};
   const auto device = q.get_device();
-  auto bufI = helpers::make_buffer(first, last);
 
   // copy new_value, as we cannot capture it by reference
   const T new_val = new_value;
 
-  const auto vectorSize = bufI.get_count();
+  const auto vectorSize = std::distance(first, last);
   const auto ndRange = sep.calculateNdRange(vectorSize);
 
-  const auto f = [vectorSize, p, new_val, ndRange,
-            &bufI](cl::sycl::handler &h) mutable {
-    const auto aI = bufI.template get_access<cl::sycl::access::mode::read_write>(h);
+  const auto f = [vectorSize, p, new_val, ndRange, first](cl::sycl::handler &h) mutable {
+    const auto aI = first;
     h.parallel_for(
         ndRange, [aI, vectorSize, p, new_val](cl::sycl::nd_item<1> id) {
           const auto global_id = id.get_global_id(0);
@@ -69,7 +67,7 @@ void replace_if(ExecutionPolicy &sep, ForwardIt first, ForwardIt last,
           }
         });
   };
-  q.submit(f);
+  q.submit(f).wait();
 }
 
 }  // namespace impl

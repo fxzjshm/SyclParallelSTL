@@ -120,7 +120,7 @@ TEST_F(InnerProductAlgorithm, TestSycl5InnerProduct) {
 
   EXPECT_TRUE(result == value);
 }
-
+/*
 TEST_F(InnerProductAlgorithm, TestSycl6InnerProduct) {
   std::list<float> v1;  //{2.0, 2.0, 3.0, 1.0};
   std::list<float> v2;  //{4.0, 2.0, 1.0, 3.0};
@@ -145,7 +145,7 @@ TEST_F(InnerProductAlgorithm, TestSycl6InnerProduct) {
 
   EXPECT_TRUE(result == value);
 }
-
+*/
 TEST_F(InnerProductAlgorithm, TestSycl7InnerProduct) {
   std::vector<int> v1;
   std::vector<int> v2;

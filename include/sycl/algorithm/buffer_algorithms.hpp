@@ -149,17 +149,18 @@ sycl_algorithm_descriptor compute_mapreduce_descriptor(cl::sycl::device device,
  */
 
 template <typename ExecutionPolicy,
-          typename A,
+          typename InputIterator,
           typename B,
           typename Reduce,
           typename Map>
 B buffer_mapreduce(ExecutionPolicy &snp,
                    cl::sycl::queue q,
-                   cl::sycl::buffer<A, 1> input_buff,
+                   InputIterator input_iter,
                    B init, //map is not applied on init
                    sycl_algorithm_descriptor d,
                    Map map,
                    Reduce reduce) {
+  typedef typename std::iterator_traits<InputIterator>::value_type A;
 
   /*
    * 'map' is not applied on init
@@ -168,8 +169,7 @@ B buffer_mapreduce(ExecutionPolicy &snp,
    */
 
   if ((d.nb_work_item == 0) || (d.nb_work_group == 0)) {
-    auto read_input = input_buff.template get_access
-      <cl::sycl::access::mode::read>();
+    auto read_input = input_iter;
     B acc = init;
     for (size_t pos = 0; pos < d.size; pos++)
       acc = reduce(acc, map(pos, read_input[pos]));
@@ -185,8 +185,7 @@ B buffer_mapreduce(ExecutionPolicy &snp,
   q.submit([&] (cl::sycl::handler &cgh) {
     cl::sycl::range<1> rg { d.nb_work_group };
     cl::sycl::range<1> ri { d.nb_work_item };
-    auto input = input_buff.template get_access
-      <cl::sycl::access::mode::read>(cgh);
+    auto input = input_iter;
     auto output = output_buff.template get_access
       <cl::sycl::access::mode::write>(cgh);
     cl::sycl::accessor<B, 1, cl::sycl::access::mode::read_write,
@@ -242,25 +241,25 @@ B buffer_mapreduce(ExecutionPolicy &snp,
  *
  */
 template <typename ExecutionPolicy,
-          typename A1,
-          typename A2,
+          typename InputIterator1,
+          typename InputIterator2,
           typename B,
           typename Reduce,
           typename Map>
 B buffer_map2reduce(ExecutionPolicy &snp,
                     cl::sycl::queue q,
-                    cl::sycl::buffer<A1, 1> input_buff1,
-                    cl::sycl::buffer<A2, 1> input_buff2,
+                    InputIterator1 input_iter1,
+                    InputIterator2 input_iter2,
                     B init, //map is not applied on init
                     sycl_algorithm_descriptor d,
                     Map map,
                     Reduce reduce) {
+  typedef typename std::iterator_traits<InputIterator1>::value_type A1;
+  typedef typename std::iterator_traits<InputIterator2>::value_type A2;
 
   if ((d.nb_work_item == 0) || (d.nb_work_group == 0)) {
-    auto read_input1 = input_buff1.template get_access
-      <cl::sycl::access::mode::read>();
-    auto read_input2 = input_buff2.template get_access
-      <cl::sycl::access::mode::read>();
+    auto read_input1 = input_iter1;
+    auto read_input2 = input_iter2;
     B acc = init;
     for (size_t pos = 0; pos < d.size; pos++)
       acc = reduce(acc, map(pos, read_input1[pos], read_input2[pos]));
@@ -277,10 +276,8 @@ B buffer_map2reduce(ExecutionPolicy &snp,
     cl::sycl::nd_range<1> rng
       { cl::sycl::range<1>{ d.nb_work_group },
         cl::sycl::range<1>{ d.nb_work_item } };
-    auto input1  = input_buff1.template get_access
-      <cl::sycl::access::mode::read>(cgh);
-    auto input2  = input_buff2.template get_access
-      <cl::sycl::access::mode::read>(cgh);
+    auto input1  = input_iter1;
+    auto input2  = input_iter2;
     auto output = output_buff.template get_access
       <cl::sycl::access::mode::write>(cgh);
     cl::sycl::accessor<B, 1, cl::sycl::access::mode::read_write,
@@ -366,15 +363,18 @@ sycl_algorithm_descriptor compute_mapscan_descriptor(cl::sycl::device device,
 }
 
 
-template <class ExecutionPolicy, class A, class B, class Reduce, class Map>
+template <class ExecutionPolicy, class InputIterator, class OutputIterator, class B, class Reduce, class Map>
 void buffer_mapscan(ExecutionPolicy &snp,
                     cl::sycl::queue q,
-                    cl::sycl::buffer<A, 1> input_buffer,
-                    cl::sycl::buffer<B, 1> output_buffer,
+                    InputIterator input_iter,
+                    OutputIterator output_iter,
                     B init,
                     sycl_algorithm_descriptor d,
                     Map map,
                     Reduce red) {
+  typedef typename std::iterator_traits<InputIterator>::value_type A;
+  static_assert(std::is_same<typename std::iterator_traits<OutputIterator>::value_type, B>::value);
+
     //map is not applied on init
 
   using std::min;
@@ -387,10 +387,8 @@ void buffer_mapscan(ExecutionPolicy &snp,
   cl::sycl::range<1> rng_wi {d.nb_work_item};
 
   q.submit([&] (cl::sycl::handler &cgh) {
-    auto input =
-      input_buffer.template get_access<cl::sycl::access::mode::read>(cgh);
-    auto output =
-      output_buffer.template get_access<cl::sycl::access::mode::write>(cgh);
+    auto input = input_iter;
+    auto output = output_iter;
 
     cl::sycl::accessor<B, 1, cl::sycl::access::mode::read_write,
                        cl::sycl::access::target::local>
@@ -414,7 +412,7 @@ void buffer_mapscan(ExecutionPolicy &snp,
         for (size_t gpos = group_begin + local_id, lpos = local_id;
             gpos < group_end;
             gpos += d.nb_work_item, lpos += d.nb_work_item) {
-          //assert(gpos < input.size());
+          //assert(gpos < d.size);
           //assert(lpos < scratch.size());
           scratch[lpos] = map(input[gpos]);
         }
@@ -483,19 +481,18 @@ void buffer_mapscan(ExecutionPolicy &snp,
         for (size_t gpos = group_begin + local_id, lpos = local_id;
             gpos < group_end;
             gpos+=d.nb_work_item, lpos+=d.nb_work_item) {
-          //assert(gpos < output.size());
+          //assert(gpos < d.size);
           //assert(lpos < scratch.size());
           output[gpos] = scratch[lpos];
         }
       });
 
     });
-  });
+  }).wait();
 
   // STEP II: global scan
   {
-    auto buff  = output_buffer.template get_access
-      <cl::sycl::access::mode::read_write>();
+    auto buff  = output_iter;
     auto write_scan  = scan.template get_access
       <cl::sycl::access::mode::write>();
     B acc = init;
@@ -511,8 +508,7 @@ void buffer_mapscan(ExecutionPolicy &snp,
 
   // STEP III: propagate global scan on local scans
   q.submit([&] (cl::sycl::handler &cgh) {
-    auto buff = output_buffer.template get_access
-      <cl::sycl::access::mode::read_write>(cgh);
+    auto buff = output_iter;
     auto read_scan = scan.template get_access
       <cl::sycl::access::mode::read>(cgh);
     cgh.parallel_for_work_group(rng_wg, rng_wi,
@@ -537,30 +533,30 @@ void buffer_mapscan(ExecutionPolicy &snp,
       });
     });
 
-  });
+  }).wait();
 
   return;
 }
 
-template <class BaseKernelName, class InT1, class InT2, class OutT, class IndexT,
+template <class BaseKernelName, class InputIterator1, class InputIterator2, class OutT, class IndexT,
           class BinaryOperation1, class BinaryOperation2>
-OutT inner_product_sequential_sycl(cl::sycl::queue q, cl::sycl::buffer<InT1, 1> input_buff1,
-                                   cl::sycl::buffer<InT2, 1> input_buff2, OutT value,
+OutT inner_product_sequential_sycl(cl::sycl::queue q, InputIterator1 input_iter1,
+                                   InputIterator2 input_iter2, OutT value,
                                    IndexT size, BinaryOperation1 op1, BinaryOperation2 op2) {
   {
     cl::sycl::buffer<OutT, 1> output_buff(&value, cl::sycl::range<1>(1));
     using KernelName = cl::sycl::helpers::NameGen<0, BaseKernelName,
                                                   BinaryOperation1, BinaryOperation2>;
     q.submit([&](cl::sycl::handler& cgh) {
-      auto input1 = input_buff1.template get_access<cl::sycl::access::mode::read>(cgh);
-      auto input2 = input_buff2.template get_access<cl::sycl::access::mode::read>(cgh);
+      auto input1 = input_iter1;
+      auto input2 = input_iter2;
       auto output = output_buff.template get_access<cl::sycl::access::mode::read_write>(cgh);
       cgh.single_task<KernelName>([=]() {
         for (auto i = 0; i < size; ++i) {
           output[0] = op1(output[0], op2(input1[i], input2[i]));
         }
       });
-    });
+    }).wait();
   }
 
   return value;

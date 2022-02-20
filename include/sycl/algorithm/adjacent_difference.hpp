@@ -16,17 +16,18 @@ template <class ExecutionPolicy, class Iterator, class OutputIterator,
 OutputIterator adjacent_difference(ExecutionPolicy &sep, Iterator b, Iterator e,
                                    OutputIterator out, BinaryOperation op) {
   {
+    auto n = std::distance(b, e);
+    if (n == 0) {
+      return out;
+    }
+
     cl::sycl::queue q(sep.get_queue());
     auto device = q.get_device();
-    auto bufI = sycl::helpers::make_const_buffer(b, e);
-    auto n = bufI.get_count();
-    auto bufO = sycl::helpers::make_buffer(out, out + bufI.get_count());
-    auto vectorSize = bufI.get_count();
+    auto vectorSize = n;
     const auto ndRange = sep.calculateNdRange(vectorSize);
-    auto f = [vectorSize, ndRange, &bufI, &bufO, op](
-        cl::sycl::handler &h) {
-      auto aI = bufI.template get_access<cl::sycl::access::mode::read>(h);
-      auto aO = bufO.template get_access<cl::sycl::access::mode::write>(h);
+    auto f = [vectorSize, ndRange, b, out, op] (cl::sycl::handler &h) {
+      auto aI = b;
+      auto aO = out;
       h.parallel_for(
           ndRange, [aI, aO, op, vectorSize](cl::sycl::nd_item<1> id) {
             auto i = id.get_global_id(0);
@@ -39,7 +40,7 @@ OutputIterator adjacent_difference(ExecutionPolicy &sep, Iterator b, Iterator e,
             }
           });
     };
-    q.submit(f);
+    q.submit(f).wait();
     return out + n;
   }
 }

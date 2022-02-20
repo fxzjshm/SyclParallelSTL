@@ -122,13 +122,11 @@ typename std::iterator_traits<InputIt>::difference_type count_if(
 
   auto d = compute_mapreduce_descriptor(device, size, sizeof(size_t));
 
-  auto input_buff = sycl::helpers::make_const_buffer(b, e);
-
   auto map = [=](size_t pos, value_type x) {
     return (unary_op(x)) ? 1 : 0;
   };
 
-  return buffer_mapreduce( snp, q, input_buff, 0, d, map, binary_op );
+  return buffer_mapreduce( snp, q, b, 0, d, map, binary_op );
 
 }
 #endif

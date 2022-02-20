@@ -45,32 +45,26 @@ ForwardIt2 rotate_copy(ExecutionPolicy &sep, ForwardIt1 first,
 
   if (first == last) return result;
 
+  const size_t n = std::distance(first, last);
+
   using namespace cl::sycl;
   using value_type = typename std::iterator_traits<ForwardIt1>::value_type;
-  std::vector<value_type> tmp(first, last);
-  std::copy(first, last, tmp.begin());
 {
-  buffer<value_type> bufI(tmp.cbegin(), tmp.cend()), bufO(tmp.size());
-  bufI.set_final_data(nullptr);
-  bufO.set_final_data(tmp.data());
-
   const auto rot_n = std::distance(first, middle);
-  sep.get_queue().submit([rot_n, &tmp, &bufI, &bufO](handler &h) {
+  sep.get_queue().submit([n, rot_n, first, result](handler &h) {
 
-    auto aI = bufI.template get_access<access::mode::read>(h);
-    auto aO = bufO.template get_access<access::mode::discard_write>(h);
+    auto aI = first;
+    auto aO = result;
 
-    h.parallel_for(range<1>{tmp.size()}, [aI, aO, rot_n](item<1> i) {
+    h.parallel_for(range<1>{n}, [aI, aO, rot_n](item<1> i) {
       const size_t rotated_id = (i.get_id(0) + rot_n >= i.get_range(0)) ?
                                  i.get_id(0) + rot_n  - i.get_range(0)  :
                                  i.get_id(0) + rot_n;
-      aO[i] = aI[rotated_id];
+      aO[i.get_id(0)] = aI[rotated_id];
     });
-  });
+  }).wait();
 }
-
-  std::copy(tmp.cbegin(), tmp.cend(), result);
-  return std::next(result, tmp.size());
+  return std::next(result, n);
 }
 
 }  // namespace impl

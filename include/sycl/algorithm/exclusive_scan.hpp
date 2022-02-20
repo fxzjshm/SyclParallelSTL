@@ -139,39 +139,26 @@ OutputIterator exclusive_scan(ExecutionPolicy &snp, InputIterator b,
   auto size = sycl::helpers::distance(b, e);
   if (size == 0 ){
       return o;
-  } else if (size == 1) {
-      *o++ = init;
-      return o;
   }
   using value_type = typename std::iterator_traits<InputIterator>::value_type;
-#ifdef TRISYCL_CL_LANGUAGE_VERSION
-  std::vector<value_type> vect { b, e };
-  *o++ = init;
-#endif
 
-
-  {
-#ifdef TRISYCL_CL_LANGUAGE_VERSION
-    cl::sycl::buffer<value_type, 1> buffer { vect.data(), size - 1 };
-    buffer.set_final_data(o);
-#else
-    std::shared_ptr<value_type> data { new value_type[size-1],
-      [&](value_type* ptr) {
-        *o++ = init;
-        std::copy_n(ptr, size-1, o);
-      }
-    };
-    std::copy_n(b, size-1, data.get());
-    cl::sycl::buffer<value_type, 1> buffer { data, cl::sycl::range<1>{size-1} };
-#endif
-
+  if (size > 1) {
     auto d = compute_mapscan_descriptor(device, size - 1, sizeof(value_type));
-    buffer_mapscan(snp, q, buffer, buffer, init, d,
+    buffer_mapscan(snp, q, b, o + 1, init, d,
                    [](value_type x) { return x; },
                    bop);
   }
 
-  return std::next(o, size - 1);
+  auto f = [o, init] (cl::sycl::handler &h) mutable {
+    h.single_task(
+        [o, init] {
+            *o = init;
+        }
+    );
+  };
+  q.submit(f).wait();
+
+  return std::next(o, size);
 }
 
 #endif

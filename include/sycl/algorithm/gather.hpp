@@ -17,16 +17,12 @@ void gather(ExecutionPolicy &sep, MapIterator first, MapIterator last,
             InputIterator input, OutputIterator result) {
   cl::sycl::queue q(sep.get_queue());
   auto device = q.get_device();
-  auto map = sycl::helpers::make_const_buffer(first, last);
-  auto n = map.get_count();
-  auto in = sycl::helpers::make_const_buffer(input, input + n);
-  auto res = sycl::helpers::make_buffer(result, result + n);
+  auto n = std::distance(first, last);
   const auto ndRange = sep.calculateNdRange(n);
-  auto f = [n, ndRange, &map, &in, &res](
-      cl::sycl::handler &h) mutable {
-    auto a_map = map.template get_access<cl::sycl::access::mode::read>(h);
-    auto a_in = in.template get_access<cl::sycl::access::mode::read>(h);
-    auto a_res = res.template get_access<cl::sycl::access::mode::write>(h);
+  auto f = [n, ndRange, first, input, result] (cl::sycl::handler &h) mutable {
+    auto a_map = first;
+    auto a_in = input;
+    auto a_res = result;
     h.parallel_for(
         ndRange, [a_map, a_in, a_res, n](cl::sycl::nd_item<1> id) {
           if (id.get_global_id(0) < n) {
@@ -34,7 +30,7 @@ void gather(ExecutionPolicy &sep, MapIterator first, MapIterator last,
           }
         });
   };
-  q.submit(f);
+  q.submit(f).wait();
 }
 
 }  // namespace impl

@@ -138,11 +138,8 @@ bool equal(ExecutionPolicy&& exec, ForwardIt1 first1, ForwardIt1 last1,
 
   auto d = compute_mapreduce_descriptor(device, size1, sizeof(std::size_t));
 
-  auto input_buff1 = sycl::helpers::make_const_buffer(first1, last1);
-  auto input_buff2 = sycl::helpers::make_const_buffer(first2, last2);
-
   return buffer_map2reduce(
-      exec, q, input_buff1, input_buff2, true, d,
+      exec, q, first1, first2, true, d,
       [p](std::size_t pos, value_type1 x, value_type2 y) { return p(x, y); },
       std::logical_and<bool>{});
 }

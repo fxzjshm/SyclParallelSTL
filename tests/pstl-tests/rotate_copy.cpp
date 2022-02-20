@@ -81,7 +81,7 @@ TEST_F(RotateCopyAlgorithm, TestSyclRotateCopy9) {
   test_rotate_copy(sep, in, out, std::next(begin(in),4));
   test_rotate_copy(sep, in, out, std::next(begin(in),8));
 }
-
+/*
 TEST_F(RotateCopyAlgorithm, TestSyclRotateCopy10) {
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class RotateCopyAlgorithm10> sep(q);
@@ -89,3 +89,4 @@ TEST_F(RotateCopyAlgorithm, TestSyclRotateCopy10) {
   std::forward_list<int> out(in.size());
   test_rotate_copy(sep, in, out, std::next(begin(in),6));
 }
+*/

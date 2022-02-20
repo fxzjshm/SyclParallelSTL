@@ -116,21 +116,8 @@ OutputIterator inclusive_scan(ExecutionPolicy &snp, InputIterator b,
   size_t size = sycl::helpers::distance(b, e);
   using value_type = typename std::iterator_traits<InputIterator>::value_type;
   {
-#ifdef TRISYCL_CL_LANGUAGE_VERSION
-    cl::sycl::buffer<value_type, 1> buffer { b, e };
-    buffer.set_final_data(o);
-#else
-    std::shared_ptr<value_type> data { new value_type[size],
-      [&](value_type* ptr) {
-        std::copy_n(ptr, size, o);
-      }
-    };
-    std::copy_n(b, size, data.get());
-    cl::sycl::buffer<value_type, 1> buffer { data, cl::sycl::range<1>{ size } };
-#endif
-
     auto d = compute_mapscan_descriptor(device, size, sizeof(value_type));
-    buffer_mapscan(snp, q, buffer, buffer, init, d,
+    buffer_mapscan(snp, q, b, o, init, d,
                    [](value_type x) { return x; },
                    bop);
   }

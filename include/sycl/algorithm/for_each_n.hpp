@@ -57,12 +57,10 @@ InputIterator for_each_n(ExecutionPolicy &exec, InputIterator first, Size n,
   if (n > 0) {
     auto last(first + n);
     auto device = q.get_device();
-    auto bufI = sycl::helpers::make_buffer(first, last);
-    auto vectorSize = bufI.get_count();
+    auto vectorSize = n;
     const auto ndRange = exec.calculateNdRange(vectorSize);
-    auto cg = [vectorSize, ndRange, &bufI, f](
-        cl::sycl::handler &h) mutable {
-      auto aI = bufI.template get_access<cl::sycl::access::mode::read_write>(h);
+    auto cg = [vectorSize, ndRange, first, f] (cl::sycl::handler &h) mutable {
+      auto aI = first;
       h.parallel_for(
           ndRange, [vectorSize, aI, f](cl::sycl::nd_item<1> id) {
             if (id.get_global_id(0) < vectorSize) {
@@ -70,7 +68,7 @@ InputIterator for_each_n(ExecutionPolicy &exec, InputIterator first, Size n,
             }
           });
     };
-    q.submit(cg);
+    q.submit(cg).wait();
     return last;
   } else {
     return first;
