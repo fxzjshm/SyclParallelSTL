@@ -35,17 +35,18 @@ OutputIterator copy_if(
 
   // reference: boost/compute/algorithm/transform_if.cpp
   typedef typename sycl::usm_allocator<size_t, sycl::usm::alloc::shared> Alloc;
-  auto indices = std::vector<size_t, Alloc>(count, Alloc(q));
+  thread_local auto indices = std::vector<size_t, Alloc>(Alloc(q));
+  indices.reserve(count);
   ::sycl::impl::transform(exec, stencil, stencil + count, indices.begin(),
     [predicate](auto x){
       return (size_t)((predicate(x)) ? 1 : 0);
   });
 
-  size_t copied_element_count = *(indices.cend() - 1);
+  size_t copied_element_count = *(indices.cbegin() + count - 1);
   ::sycl::impl::exclusive_scan(
-      exec, indices.begin(), indices.end(), indices.begin(), (size_t)0, std::plus()
+      exec, indices.begin(), indices.begin() + count, indices.begin(), (size_t)0, std::plus()
   );
-  copied_element_count += *(indices.cend() - 1); // last scan element plus last mask element
+  copied_element_count += *(indices.cbegin() + count - 1); // last scan element plus last mask element
   if (copied_element_count == 0) {
       return result;
   }

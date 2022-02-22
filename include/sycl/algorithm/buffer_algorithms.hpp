@@ -180,7 +180,12 @@ B buffer_mapreduce(ExecutionPolicy &snp,
   using std::min;
   using std::max;
 
-  cl::sycl::buffer<B, 1> output_buff { cl::sycl::range<1> { d.nb_work_group } };
+  // reuse temporary buffer between function calls
+  // cl::sycl::buffer<B, 1> output_buff { cl::sycl::range<1> { d.nb_work_group } };
+  thread_local cl::sycl::buffer<B, 1> output_buff = { cl::sycl::range<1> { 2 * d.nb_work_group } };
+  if (output_buff.size() < d.nb_work_group) {
+      output_buff = cl::sycl::buffer<B, 1> { cl::sycl::range<1> { 2 * d.nb_work_group } };
+  }
 
   q.submit([&] (cl::sycl::handler &cgh) {
     cl::sycl::range<1> rg { d.nb_work_group };
@@ -270,7 +275,12 @@ B buffer_map2reduce(ExecutionPolicy &snp,
   using std::min;
   using std::max;
 
-  cl::sycl::buffer<B, 1> output_buff { cl::sycl::range<1> { d.nb_work_group } };
+  // reuse temporary buffer between function calls
+  // cl::sycl::buffer<B, 1> output_buff { cl::sycl::range<1> { d.nb_work_group } };
+  thread_local cl::sycl::buffer<B, 1> output_buff = { cl::sycl::range<1> { 2 * d.nb_work_group } };
+  if (output_buff.size() < d.nb_work_group) {
+      output_buff = cl::sycl::buffer<B, 1> { cl::sycl::range<1> { 2 * d.nb_work_group } };
+  }
 
   q.submit([&] (cl::sycl::handler &cgh) {
     cl::sycl::nd_range<1> rng
@@ -381,8 +391,13 @@ void buffer_mapscan(ExecutionPolicy &snp,
   using std::max;
 
   //WARNING: nb_work_group is not bounded by max_compute_units
-  auto scan = sycl::helpers::make_temp_buffer<B>( d.nb_work_group );
+  // reuse temporary buffer between function calls
   //cl::sycl::buffer<B, 1> scan = { cl::sycl::range<1> { d.nb_work_group } };
+  thread_local cl::sycl::buffer<B, 1> scan = { cl::sycl::range<1> { 2 * d.nb_work_group } };
+  if (scan.size() < d.nb_work_group) {
+      scan = cl::sycl::buffer<B, 1> { cl::sycl::range<1> { 2 * d.nb_work_group } };
+  }
+
   cl::sycl::range<1> rng_wg {d.nb_work_group};
   cl::sycl::range<1> rng_wi {d.nb_work_item};
 

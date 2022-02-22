@@ -79,35 +79,39 @@ std::pair<OutputIterator1, OutputIterator2>
     InputIterator2 values_last = values_first + n;
     
     // compute head flags
-    std::vector<FlagType, FlagTypeAllocator> head_flags(n, flag_type_allocator);
+    thread_local std::vector<FlagType, FlagTypeAllocator> head_flags(flag_type_allocator);
+    head_flags.reserve(n);
     sycl::impl::transform(exec, keys_first, keys_last - 1, keys_first + 1, head_flags.begin() + 1, std::not_fn(binary_pred));
     head_flags[0] = 1;
 
     // compute tail flags
-    std::vector<FlagType, FlagTypeAllocator> tail_flags(n, flag_type_allocator); //COPY INSTEAD OF TRANSFORM
+    thread_local std::vector<FlagType, FlagTypeAllocator> tail_flags(flag_type_allocator); //COPY INSTEAD OF TRANSFORM
+    tail_flags.reserve(n);
     sycl::impl::transform(exec, keys_first, keys_last - 1, keys_first + 1, tail_flags.begin(), std::not_fn(binary_pred));
     tail_flags[n-1] = 1;
 
     // scan the values by flag
-    std::vector<ValueType, ValueTypeAllocator> scanned_values(n, value_type_allocator);
-    std::vector<FlagType, FlagTypeAllocator> scanned_tail_flags(n, flag_type_allocator);
+    thread_local std::vector<ValueType, ValueTypeAllocator> scanned_values(value_type_allocator);
+    thread_local std::vector<FlagType, FlagTypeAllocator> scanned_tail_flags(flag_type_allocator);
+    scanned_values.reserve(n);
+    scanned_tail_flags.reserve(n);
     
     sycl::impl::inclusive_scan
         (exec,
          ZipIter(values_first,           head_flags.begin()),
-         ZipIter(values_last,            head_flags.end()),
+         ZipIter(values_first + n,       head_flags.begin() + n),
          ZipIter(scanned_values.begin(), scanned_tail_flags.begin()),
          std::tuple(ValueType(), FlagType()),
          detail::reduce_by_key_functor<ValueType, FlagType, BinaryFunction>(binary_op));
 
-    sycl::impl::exclusive_scan(exec, tail_flags.begin(), tail_flags.end(), scanned_tail_flags.begin(), FlagType(0), std::plus<FlagType>());
+    sycl::impl::exclusive_scan(exec, tail_flags.begin(), tail_flags.begin() + n, scanned_tail_flags.begin(), FlagType(0), std::plus<FlagType>());
 
     // number of unique keys
     FlagType N = scanned_tail_flags[n - 1] + 1;
     
     // scatter the keys and accumulated values    
-    sycl::impl::scatter_if(exec, keys_first,            keys_last,             scanned_tail_flags.begin(), head_flags.begin(), keys_output);
-    sycl::impl::scatter_if(exec, scanned_values.begin(), scanned_values.end(), scanned_tail_flags.begin(), tail_flags.begin(), values_output);
+    sycl::impl::scatter_if(exec, keys_first,             keys_last,                  scanned_tail_flags.begin(), head_flags.begin(), keys_output);
+    sycl::impl::scatter_if(exec, scanned_values.begin(), scanned_values.begin() + n, scanned_tail_flags.begin(), tail_flags.begin(), values_output);
 
     return std::make_pair(keys_output + N, values_output + N); 
 } // end reduce_by_key()
