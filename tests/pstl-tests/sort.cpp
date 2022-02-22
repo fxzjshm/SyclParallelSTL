@@ -76,6 +76,24 @@ TEST_F(SortAlgorithm, TestSyclSort) {
     sort(*sycl_policy, a.begin(), a.end());
     EXPECT_TRUE(std::is_sorted(a.begin(), a.end()));
   }
+
+  {
+    std::vector<int> v(2333), v2;
+    std::generate(v.begin(), v.end(), std::rand);
+    sort(*sycl_policy, v.begin(), v.end());
+    v2 = v;
+    std::sort(v2.begin(), v2.end());
+    EXPECT_TRUE(std::equal(v.begin(), v.end(), v2.begin()));
+  }
+
+  {
+    std::vector<int> v(233), v2;
+    std::generate(v.begin(), v.end(), std::rand);
+    sort(*sycl_policy, v.begin(), v.end());
+    v2 = v;
+    std::sort(v2.begin(), v2.end());
+    EXPECT_TRUE(std::equal(v.begin(), v.end(), v2.begin()));
+  }
 }
 
 TEST_F(SortAlgorithm, TestSycl2Sort) {

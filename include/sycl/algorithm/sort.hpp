@@ -33,6 +33,7 @@
 #include <typeinfo>
 #include <algorithm>
 
+#include <sycl/algorithm/copy.hpp>
 #include <ZipIterator.hpp>
 
 /** sort_kernel_bitonic.
@@ -175,73 +176,128 @@ void sequential_sort(cl::sycl::queue q, cl::sycl::buffer<T, 1, Alloc> buf,
   q.submit(f);
 }
 
+// reference: boost/compute/algorithm/detail/merge_sort_on_gpu.hpp
+template<class ExecutionPolicy, class InputIterator, class OutputIterator, class Compare>
+inline void merge_blocks_on_gpu(ExecutionPolicy &exec,
+                                InputIterator input_iterator,
+                                OutputIterator output_iterator,
+                                Compare compare,
+                                const size_t count,
+                                const size_t block_size)
+{
+    typedef typename std::iterator_traits<InputIterator>::value_type key_type;
+
+    const auto ndRange = exec.calculateNdRange(count);
+
+    auto f = [=] (cl::sycl::handler &h) {
+        auto input = input_iterator;
+        auto output = output_iterator;
+        h.parallel_for(ndRange, [=](cl::sycl::nd_item<1> id) {
+            const size_t gid = id.get_global_id(0);
+            if (gid >= count) {
+                return;
+            }
+            const key_type my_key = input[gid];
+            const size_t my_block_idx = gid / block_size;
+            const bool my_block_idx_is_odd = my_block_idx & 0x1;
+            const size_t other_block_idx = my_block_idx_is_odd ? my_block_idx - 1 : my_block_idx + 1;
+            const size_t my_block_start = std::min(my_block_idx * block_size, count);
+            const size_t my_block_end = std::min((my_block_idx + 1) * block_size, count);
+            const size_t other_block_start = std::min(other_block_idx * block_size, count);
+            const size_t other_block_end = std::min((other_block_idx + 1) * block_size, count);
+            if (other_block_start == count) {
+                output[gid] = my_key;
+                return;
+            }
+            size_t left_idx = other_block_start;
+            size_t right_idx = other_block_end;
+            while (left_idx < right_idx) {
+                size_t mid_idx = (left_idx + right_idx) / 2;
+                key_type mid_key = input[mid_idx];
+                bool smaller = compare(mid_key, my_key);
+                left_idx = smaller ? mid_idx + 1 : left_idx;
+                right_idx = smaller ? right_idx : mid_idx;
+            }
+            right_idx = other_block_end;
+            if (my_block_idx_is_odd && left_idx != right_idx) {
+                key_type upper_key = input[left_idx];
+                while (!(compare(upper_key, my_key)) && !(compare(my_key, upper_key)) && left_idx < right_idx) {
+                    size_t mid_idx = (left_idx + right_idx) / 2;
+                    key_type mid_key = input[mid_idx];
+                    bool equal = !(compare(mid_key, my_key)) && !(compare(my_key, mid_key));
+                    left_idx = equal ? mid_idx + 1 : left_idx + 1;
+                    right_idx = equal ? right_idx : mid_idx;
+                    upper_key = input[left_idx];
+                }
+            }
+            size_t offset = 0;
+            offset += gid - my_block_start;
+            offset += left_idx - other_block_start;
+            offset += std::min(my_block_start, other_block_start);
+            output[offset] = my_key;
+        });
+    };
+    exec.get_queue().submit(f);
+}
+
+// reference: boost/compute/algorithm/detail/merge_sort_on_gpu.hpp
+template<class ExecutionPolicy, class Iterator, class Compare>
+inline void merge_sort_on_gpu(ExecutionPolicy &exec,
+                              Iterator first,
+                              Iterator last,
+                              Compare compare)
+{
+    typedef typename std::iterator_traits<Iterator>::value_type key_type;
+
+    size_t count = std::distance(first, last);
+    if(count < 2){
+        return;
+    }
+
+    size_t block_size = 1;
+
+    bool result_in_temporary_buffer = false;
+    typedef cl::sycl::usm_allocator<key_type, cl::sycl::usm::alloc::shared> KeyTypeAllocator;
+    KeyTypeAllocator key_type_allocator(exec.get_queue());
+    thread_local std::vector<key_type, KeyTypeAllocator> temp_keys(key_type_allocator);
+    temp_keys.reserve(count);
+
+    for(; block_size < count; block_size *= 2) {
+        result_in_temporary_buffer = !result_in_temporary_buffer;
+        if(result_in_temporary_buffer) {
+            merge_blocks_on_gpu(exec, first, temp_keys.begin(),
+                                compare, count, block_size);
+        } else {
+            merge_blocks_on_gpu(exec, temp_keys.begin(), first,
+                                compare, count, block_size);
+        }
+    }
+
+    if(result_in_temporary_buffer) {
+        // not using temp_keys.end() as resize() construct/destructs elements, which isn't needed
+        ::sycl::impl::copy(exec, temp_keys.begin(), temp_keys.begin() + count, first);
+    }
+    exec.get_queue().wait();
+}
+
 /* bitonic_sort.
  * Performs a bitonic sort on the given buffer
  */
-template <typename T, typename Alloc>
-void bitonic_sort(cl::sycl::queue q, cl::sycl::buffer<T, 1, Alloc> buf,
+template <typename InputIterator>
+void bitonic_sort(cl::sycl::queue q, InputIterator input,
                   size_t vectorSize) {
-  int numStages = 0;
-  // 2^numStages should be equal to length
-  // i.e number of times you halve the lenght to get 1 should be numStages
-  for (int tmp = vectorSize; tmp > 1; tmp >>= 1) {
-    ++numStages;
-  }
-  cl::sycl::range<1> r{vectorSize / 2};
-  for (int stage = 0; stage < numStages; ++stage) {
-    // Every stage has stage + 1 passes
-    for (int passOfStage = 0; passOfStage < stage + 1; ++passOfStage) {
-      auto f = [=](cl::sycl::handler &h) mutable {
-        auto a = buf.template get_access<cl::sycl::access::mode::read_write>(h);
-        h.parallel_for(
-            cl::sycl::range<1>{r},
-            [a, stage, passOfStage](cl::sycl::item<1> it) {
-              int sortIncreasing = 1;
-              cl::sycl::id<1> id = it.get_id();
-              int threadId = id.get(0);
-
-              int pairDistance = 1 << (stage - passOfStage);
-              int blockWidth = 2 * pairDistance;
-
-              int leftId = (threadId % pairDistance) +
-                           (threadId / pairDistance) * blockWidth;
-              int rightId = leftId + pairDistance;
-
-              T leftElement = a[leftId];
-              T rightElement = a[rightId];
-
-              int sameDirectionBlockWidth = 1 << stage;
-
-              if ((threadId / sameDirectionBlockWidth) % 2 == 1) {
-                sortIncreasing = 1 - sortIncreasing;
-              }
-
-              T greater;
-              T lesser;
-
-              if (leftElement > rightElement) {
-                greater = leftElement;
-                lesser = rightElement;
-              } else {
-                greater = rightElement;
-                lesser = leftElement;
-              }
-
-              a[leftId] = sortIncreasing ? lesser : greater;
-              a[rightId] = sortIncreasing ? greater : lesser;
-            });
-      };  // command group functor
-      q.submit(f);
-    }  // passStage
-  }    // stage
+  typedef typename std::iterator_traits<InputIterator>::value_type T;
+  ::sycl::impl::bitonic_sort(q, input, vectorSize, std::less<T>());
 }  // bitonic_sort
 
 /* bitonic_sort.
  * Performs a bitonic sort on the given buffer
  */
-template <typename T, typename Alloc, class ComparableOperator>
-void bitonic_sort(cl::sycl::queue q, cl::sycl::buffer<T, 1, Alloc> buf,
+template <typename InputIterator, class ComparableOperator>
+void bitonic_sort(cl::sycl::queue q, InputIterator input,
                   size_t vectorSize, ComparableOperator comp) {
+  typedef typename std::iterator_traits<InputIterator>::value_type T;
+
   int numStages = 0;
   // 2^numStages should be equal to length
   // i.e number of times you halve the lenght to get 1 should be numStages
@@ -253,7 +309,7 @@ void bitonic_sort(cl::sycl::queue q, cl::sycl::buffer<T, 1, Alloc> buf,
     // Every stage has stage + 1 passes
     for (int passOfStage = 0; passOfStage < stage + 1; ++passOfStage) {
       auto f = [=](cl::sycl::handler &h) mutable {
-        auto a = buf.template get_access<cl::sycl::access::mode::read_write>(h);
+        auto a = input;
         h.parallel_for(
             cl::sycl::range<1>{r},
             [a, stage, passOfStage, comp](cl::sycl::item<1> it) {
@@ -315,21 +371,18 @@ struct buffer_traits<cl::sycl::buffer<T, 1, Alloc>> {
 template <class ExecutionPolicy, class RandomIt, class CompareOp>
 void sort(ExecutionPolicy &sep, RandomIt first, RandomIt last, CompareOp comp) {
   cl::sycl::queue q(sep.get_queue());
-  typedef typename std::iterator_traits<RandomIt>::value_type type_;
-  auto buf = std::move(sycl::helpers::make_buffer(first, last));
-  auto vectorSize = buf.get_count();
-
-  typedef typename buffer_traits<decltype(buf)>::allocator_type allocator_;
+  auto vectorSize = std::distance(first, last);
   
   if (impl::isPowerOfTwo(vectorSize)) {
     sycl::impl::bitonic_sort<
-        type_, allocator_, CompareOp>(
-        q, buf, vectorSize, comp);
+        RandomIt, CompareOp>(
+        q, first, vectorSize, comp);
   } else {
-    sycl::impl::sequential_sort<
-        type_, allocator_, CompareOp>(
-        q, buf, vectorSize, comp);
+    sycl::impl::merge_sort_on_gpu<
+        ExecutionPolicy, RandomIt, CompareOp>(
+        sep, first, last, comp);
   }
+  q.wait();
 }
 
 template <class ExecutionPolicy, class KeyItrator, class ValueItrator, class CompareOp>
