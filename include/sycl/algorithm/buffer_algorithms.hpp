@@ -197,13 +197,25 @@ B buffer_mapreduce(ExecutionPolicy &snp,
                        cl::sycl::access::target::local>
       sum { cl::sycl::range<1>(d.nb_work_item), cgh };
     cgh.parallel_for_work_group(rg, ri, [=](cl::sycl::group<1> grp) {
-      size_t group_id = grp.get_id(0);
-      //assert(group_id < d.nb_work_group);
-      size_t group_begin = group_id * d.size_per_work_group;
-      size_t group_end   = min((group_id+1) * d.size_per_work_group, d.size);
-      //assert(group_begin < group_end); //< as we properly selected the
+      // ********************
+      // work around for issue https://github.com/illuhad/hipSYCL/issues/252
+      //     hierarchical: Initializing variables in work group scope/local memory doesn't work (#252)
+      // ********************
+      #define PREPARE_GROUP_SCOPE_VARIABLES \
+      size_t group_id = grp.get_id(0); \
+      size_t group_begin = group_id * d.size_per_work_group; \
+      size_t group_end   = min((group_id+1) * d.size_per_work_group, d.size); \
+      //assert(group_id < d.nb_work_group); \
+      //assert(group_begin < group_end); //< as we properly selected the \
                                        //  number of work_group
+
+      #ifndef __HIPSYCL__
+      PREPARE_GROUP_SCOPE_VARIABLES;
+      #endif
       grp.parallel_for_work_item([&](cl::sycl::h_item<1> id) {
+        #ifdef __HIPSYCL__
+        PREPARE_GROUP_SCOPE_VARIABLES;
+        #endif
         size_t local_id = id.get_local_id(0);
         size_t local_pos = group_begin + local_id;
         if (local_pos < group_end) {
@@ -217,6 +229,13 @@ B buffer_mapreduce(ExecutionPolicy &snp,
           sum[local_id] = acc;
         }
       });
+
+      #ifdef __HIPSYCL__
+      grp.parallel_for_work_item([&](cl::sycl::h_item<1> id) {
+        size_t lid = id.get_local_id(0);
+        if (lid == 0) {
+            PREPARE_GROUP_SCOPE_VARIABLES;
+      #endif
       B acc = sum[0];
       for (size_t local_id = 1;
            local_id < min(d.nb_work_item, group_end - group_begin);
@@ -224,8 +243,13 @@ B buffer_mapreduce(ExecutionPolicy &snp,
         acc = reduce(acc, sum[local_id]);
 
       output[group_id] = acc;
+      #ifdef __HIPSYCL__
+        }
+      });
+      #endif
     });
-  });
+    #undef PREPARE_GROUP_SCOPE_VARIABLES
+  }).wait();
   auto read_output = output_buff.template get_access
     <cl::sycl::access::mode::read>();
 
@@ -295,13 +319,21 @@ B buffer_map2reduce(ExecutionPolicy &snp,
       sum { cl::sycl::range<1>(d.nb_work_item), cgh };
     cgh.parallel_for_work_group(
         rng.get_global_range(), rng.get_local_range(), [=](cl::sycl::group<1> grp) {
-      size_t group_id = grp.get_id(0);
-      //assert(group_id < d.nb_work_group);
-      size_t group_begin = group_id * d.size_per_work_group;
-      size_t group_end = min((group_id+1) * d.size_per_work_group, d.size);
-      //assert(group_begin < group_end); // as we properly selected the
+      #define PREPARE_GROUP_SCOPE_VARIABLES \
+      size_t group_id = grp.get_id(0); \
+      size_t group_begin = group_id * d.size_per_work_group; \
+      size_t group_end = min((group_id+1) * d.size_per_work_group, d.size); \
+      //assert(group_id < d.nb_work_group); \
+      //assert(group_begin < group_end); // as we properly selected the \
                                          // number of work_group
+
+      #ifndef __HIPSYCL__
+      PREPARE_GROUP_SCOPE_VARIABLES;
+      #endif
       grp.parallel_for_work_item([&](cl::sycl::h_item<1> id) {
+        #ifdef __HIPSYCL__
+        PREPARE_GROUP_SCOPE_VARIABLES;
+        #endif
         size_t local_id = id.get_local_id(0);
         size_t local_pos = group_begin + local_id;
         if (local_pos < group_end) {
@@ -315,6 +347,13 @@ B buffer_map2reduce(ExecutionPolicy &snp,
           sum[local_id] = acc;
         }
       });
+
+      #ifdef __HIPSYCL__
+      grp.parallel_for_work_item([&](cl::sycl::h_item<1> id) {
+        size_t lid = id.get_local_id(0);
+        if (lid == 0) {
+            PREPARE_GROUP_SCOPE_VARIABLES;
+      #endif
       B acc = sum[0];
       for (size_t local_id = 1;
            local_id < min(d.nb_work_item, group_end - group_begin);
@@ -322,8 +361,14 @@ B buffer_map2reduce(ExecutionPolicy &snp,
         acc = reduce(acc, sum[local_id]);
 
       output[group_id] = acc;
+      #ifdef __HIPSYCL__
+        }
+      });
+      #endif
+
+      #undef PREPARE_GROUP_SCOPE_VARIABLES
     });
-  });
+  }).wait();
   auto read_output  = output_buff.template get_access
     <cl::sycl::access::mode::read>();
 
@@ -412,15 +457,23 @@ void buffer_mapscan(ExecutionPolicy &snp,
 
     cgh.parallel_for_work_group(rng_wg, rng_wi,
                                           [=](cl::sycl::group<1> grp) {
-      size_t group_id = grp.get_id(0);
-      size_t group_begin = group_id * d.size_per_work_group;
-      size_t group_end   = min((group_id+1) * d.size_per_work_group, d.size);
+      #define PREPARE_GROUP_SCOPE_VARIABLES \
+      size_t group_id = grp.get_id(0); \
+      size_t group_begin = group_id * d.size_per_work_group; \
+      size_t group_end   = min((group_id+1) * d.size_per_work_group, d.size); \
       size_t local_size = group_end - group_begin;
+
+      #ifndef __HIPSYCL__
+      PREPARE_GROUP_SCOPE_VARIABLES;
+      #endif
 
       // Step 0:
       // each work_item copy a piece of data
       // map is applied during the process
       grp.parallel_for_work_item([&](cl::sycl::h_item<1> id) {
+        #ifdef __HIPSYCL__
+        PREPARE_GROUP_SCOPE_VARIABLES;
+        #endif
         size_t local_id  = id.get_local_id(0);
         // gpos: position in the global vector
         // lpos: position in the local vector
@@ -436,6 +489,9 @@ void buffer_mapscan(ExecutionPolicy &snp,
       // Step 1:
       // each work_item scan a piece of data
       grp.parallel_for_work_item([&](cl::sycl::h_item<1> id) {
+        #ifdef __HIPSYCL__
+        PREPARE_GROUP_SCOPE_VARIABLES;
+        #endif
         size_t local_id  = id.get_local_id(0);
         size_t local_pos = local_id * d.size_per_work_item;
         size_t local_end = min((local_id+1) * d.size_per_work_item, local_size);
@@ -452,7 +508,16 @@ void buffer_mapscan(ExecutionPolicy &snp,
       });
 
       // Step 2:
+      #ifdef __HIPSYCL__
+      grp.parallel_for_work_item([&](cl::sycl::h_item<1> id) {
+        size_t lid = id.get_local_id(0);
+        if (lid == 0) {
+            PREPARE_GROUP_SCOPE_VARIABLES;
+      #endif
       {
+        #ifdef __HIPSYCL__
+        PREPARE_GROUP_SCOPE_VARIABLES;
+        #endif
         // scan on every last item
         size_t local_pos = d.size_per_work_item - 1;
         if (local_pos < local_size)
@@ -467,10 +532,17 @@ void buffer_mapscan(ExecutionPolicy &snp,
           }
         }
       }
+      #ifdef __HIPSYCL__
+        }
+      });
+      #endif
 
       // Step 3:
       // (except for group = 0) add the last element of the previous block
       grp.parallel_for_work_item([&](cl::sycl::h_item<1> id) {
+        #ifdef __HIPSYCL__
+        PREPARE_GROUP_SCOPE_VARIABLES;
+        #endif
         size_t local_id  = id.get_local_id(0);
         if (local_id > 0) {
           size_t local_pos = local_id * d.size_per_work_item;
@@ -491,6 +563,9 @@ void buffer_mapscan(ExecutionPolicy &snp,
       // Step 4:
       // each work_item copy a piece of data
       grp.parallel_for_work_item([&](cl::sycl::h_item<1> id) {
+        #ifdef __HIPSYCL__
+        PREPARE_GROUP_SCOPE_VARIABLES;
+        #endif
         size_t local_id = id.get_local_id(0);
         // lpos: position in the local vector
         for (size_t gpos = group_begin + local_id, lpos = local_id;
@@ -502,6 +577,7 @@ void buffer_mapscan(ExecutionPolicy &snp,
         }
       });
 
+    #undef PREPARE_GROUP_SCOPE_VARIABLES
     });
   }).wait();
 
@@ -528,15 +604,23 @@ void buffer_mapscan(ExecutionPolicy &snp,
       <cl::sycl::access::mode::read>(cgh);
     cgh.parallel_for_work_group(rng_wg, rng_wi,
                                           [=](cl::sycl::group<1> grp) {
-      size_t group_id = grp.get_id(0);
-      B acc = read_scan[group_id];
-      //assert(group_id < d.nb_work_group);
-      size_t group_begin = group_id * d.size_per_work_group;
-      size_t group_end   = min((group_id+1) * d.size_per_work_group, d.size);
-      //assert(group_begin < group_end); //  as we properly selected the
-                                         //  number of work_group
+      #define PREPARE_GROUP_SCOPE_VARIABLES \
+      size_t group_id = grp.get_id(0); \
+      B acc = read_scan[group_id]; \
+      size_t group_begin = group_id * d.size_per_work_group; \
+      size_t group_end   = min((group_id+1) * d.size_per_work_group, d.size); \
+      //assert(group_id < d.nb_work_group); \
+      //assert(group_begin < group_end); //  as we properly selected the \
+                                         //  number of work_group 
+    
+      #ifndef __HIPSYCL__
+      PREPARE_GROUP_SCOPE_VARIABLES;
+      #endif
 
       grp.parallel_for_work_item([&](cl::sycl::h_item<1> id) {
+        #ifdef __HIPSYCL__
+        PREPARE_GROUP_SCOPE_VARIABLES;
+        #endif
         size_t local_id = id.get_local_id(0);
         // gpos: position in the global vector
         // lpos: position in the local vector
@@ -546,6 +630,7 @@ void buffer_mapscan(ExecutionPolicy &snp,
           buff[gpos] = red(acc, buff[gpos]);
         }
       });
+      #undef PREPARE_GROUP_SCOPE_VARIABLES
     });
 
   }).wait();
