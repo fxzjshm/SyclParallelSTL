@@ -10,6 +10,10 @@ jobs:
       clang_version:
         type: integer
         default: 13
+      nproc:
+        type: integer
+        default: 4
+
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     docker:
@@ -22,7 +26,7 @@ jobs:
       - run:
           name: install libstdc++
           command: |
-            sudo apt install libstdc++-10-dev
+            sudo apt update && sudo apt install libstdc++-10-dev
 
       - run:
           name: install LLVM
@@ -40,11 +44,11 @@ jobs:
       - run: 
           name: install hipSYCL
           command: |
-            mkdir -p /tmp/workspace && cd /tmp/workspace
+            cd /mnt/ramdisk
             git clone https://github.com/illuhad/hipSYCL --depth 1
             mkdir -p ./hipSYCL/build && cd ./hipSYCL/build
             cmake .. -DCMAKE_C_COMPILER=/usr/bin/clang-<< parameters.clang_version >> -DCMAKE_CXX_COMPILER=/usr/bin/clang++-<< parameters.clang_version >> -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-<< parameters.clang_version >> -DLLVM_DIR=/usr/lib/llvm-<< parameters.clang_version >>/cmake -DCMAKE_INSTALL_PREFIX=/opt/hipSYCL
-            make -j `nproc`
+            make -j << parameters.nproc >>
             sudo make install
       
       - run:
@@ -53,7 +57,7 @@ jobs:
             cd ~/project
             mkdir build && cd build
             cmake ..
-            make -j`nproc`
+            make -j << parameters.nproc >>
             make test
 
 
