@@ -1,0 +1,69 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/2.0/configuration-reference
+version: 2.1
+
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+jobs:
+  test:
+    parameters:
+      clang_version:
+        type: integer
+        default: 13
+      nproc:
+        type: integer
+        default: 4
+
+    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+    docker:
+      - image: cimg/base:stable
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    steps:
+      - checkout
+
+      - run:
+          name: install libstdc++
+          command: |
+            sudo apt update && sudo apt install libstdc++-10-dev
+
+      - run:
+          name: install LLVM
+          command: |
+            wget https://apt.llvm.org/llvm.sh
+            chmod +x llvm.sh
+            sudo ./llvm.sh << parameters.clang_version >>
+            sudo apt install libclang-<< parameters.clang_version >>-dev clang-tools-<< parameters.clang_version >> libomp-<< parameters.clang_version >>-dev llvm-<< parameters.clang_version >>-dev clang-<< parameters.clang_version >>
+
+      - run:
+          name: install Boost
+          command: |
+            sudo apt install libboost-all-dev
+
+      - run: 
+          name: install hipSYCL
+          command: |
+            cd /mnt/ramdisk
+            git clone https://github.com/illuhad/hipSYCL --depth 1
+            mkdir -p ./hipSYCL/build && cd ./hipSYCL/build
+            cmake .. -DCMAKE_C_COMPILER=/usr/bin/clang-<< parameters.clang_version >> -DCMAKE_CXX_COMPILER=/usr/bin/clang++-<< parameters.clang_version >> -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-<< parameters.clang_version >> -DLLVM_DIR=/usr/lib/llvm-<< parameters.clang_version >>/cmake -DCMAKE_INSTALL_PREFIX=/opt/hipSYCL
+            make -j << parameters.nproc >>
+            sudo make install
+      
+      - run:
+          name: build tests
+          command: |
+            cd ~/project
+            mkdir build && cd build
+            cmake ..
+            make -j << parameters.nproc >>
+            make test
+
+
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+workflows:
+  test-workflow:
+    jobs:
+      - test

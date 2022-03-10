@@ -1,4 +1,4 @@
-Changes of this fork:
+Changes of this fork: [![CircleCI](https://circleci.com/gh/fxzjshm/SyclParallelSTL/tree/master.svg?style=svg)](https://circleci.com/gh/fxzjshm/SyclParallelSTL/tree/master)
 * important modifications:
     * functions will not make buffer from inputs and outputs; instead, they operate directly on input/output iterators, so a usm_allocator or something similar is required if running on hetegorous platforms. (see commit 5913425, c6546c9, 1394ca9)
 * added functions:
