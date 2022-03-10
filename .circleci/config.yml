@@ -26,6 +26,11 @@ jobs:
             sudo ./llvm.sh << parameters.clang_version >>
             sudo apt install libclang-<< parameters.clang_version >>-dev clang-tools-<< parameters.clang_version >> libomp-<< parameters.clang_version >>-dev llvm-<< parameters.clang_version >>-dev clang-<< parameters.clang_version >>
 
+      - run:
+          name: install Boost
+          command: |
+            sudo apt install libboost-all-dev
+
       - run: 
           name: install hipSYCL
           command: |
