@@ -1,0 +1,53 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/2.0/configuration-reference
+version: 2.1
+
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+jobs:
+  test:
+    parameters:
+      clang_version:
+        type: integer
+        default: 13
+    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+    docker:
+      - image: cimg/base:stable
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    steps:
+      - checkout
+      - run:
+          name: install LLVM
+          command: |
+            wget https://apt.llvm.org/llvm.sh
+            chmod +x llvm.sh
+            sudo ./llvm.sh << parameters.clang_version >>
+            sudo apt install libclang-<< parameters.clang_version >>-dev clang-tools-<< parameters.clang_version >> libomp-<< parameters.clang_version >>-dev llvm-<< parameters.clang_version >>-dev clang-<< parameters.clang_version >>
+
+      - run: 
+          name: install hipSYCL
+          command: |
+            mkdir -p /tmp/workspace
+            git clone https://github.com/illuhad/hipSYCL --depth 1
+            mkdir -p /tmp/workspace/hipSYCL/build && cd /tmp/workspace/hipSYCL/build
+            cmake ~/workspace/hipSYCL -DCMAKE_C_COMPILER=/usr/bin/clang-<< parameters.clang_version >> -DCMAKE_CXX_COMPILER=/usr/bin/clang++-<< parameters.clang_version >> -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-<< parameters.clang_version >> -DLLVM_DIR=/usr/lib/llvm-<< parameters.clang_version >>/cmake -DCMAKE_INSTALL_PREFIX=/opt/hipSYCL
+            make -j`nproc` install
+      
+      - run:
+          name: build tests
+          command: |
+            cd ~/project
+            mkdir build && cd build
+            cmake ..
+            make -j`nproc`
+            make test
+
+
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+workflows:
+  test-workflow:
+    jobs:
+      - test
