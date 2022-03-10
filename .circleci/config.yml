@@ -31,7 +31,7 @@ jobs:
           command: |
             mkdir -p /tmp/workspace && cd /tmp/workspace
             git clone https://github.com/illuhad/hipSYCL --depth 1
-            mkdir -p ./hipSYCL/build && cd ,/hipSYCL/build
+            mkdir -p ./hipSYCL/build && cd ./hipSYCL/build
             cmake .. -DCMAKE_C_COMPILER=/usr/bin/clang-<< parameters.clang_version >> -DCMAKE_CXX_COMPILER=/usr/bin/clang++-<< parameters.clang_version >> -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-<< parameters.clang_version >> -DLLVM_DIR=/usr/lib/llvm-<< parameters.clang_version >>/cmake -DCMAKE_INSTALL_PREFIX=/opt/hipSYCL
             make -j `nproc` install
       
