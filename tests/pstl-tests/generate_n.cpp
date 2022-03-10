@@ -33,13 +33,15 @@
 #include <experimental/algorithm>
 #include <sycl/execution_policy>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 namespace parallel = std::experimental::parallel;
 
 struct GenerateNAlgorithm : public testing::Test {};
 
 TEST_F(GenerateNAlgorithm, TestStdGenerateN) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
 
   std::generate_n(begin(v), v.size(), []() { return 1; });
 
@@ -47,8 +49,8 @@ TEST_F(GenerateNAlgorithm, TestStdGenerateN) {
 }
 
 TEST_F(GenerateNAlgorithm, TestStd2GenerateN) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = {1, 1, 1, 1, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = {1, 1, 1, 1, 5, 6, 7, 8};
 
   std::generate_n(begin(v), 4, []() { return 1; });
 
@@ -56,8 +58,8 @@ TEST_F(GenerateNAlgorithm, TestStd2GenerateN) {
 }
 
 TEST_F(GenerateNAlgorithm, TestStd3GenerateN) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = v;
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = v;
 
   int negative_count = -v.size();
   std::generate_n(begin(v), negative_count, []() { return 1; });
@@ -66,8 +68,8 @@ TEST_F(GenerateNAlgorithm, TestStd3GenerateN) {
 }
 
 TEST_F(GenerateNAlgorithm, TestSyclGenerateN) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class GenerateNAlgorithm> snp(q);
@@ -77,8 +79,8 @@ TEST_F(GenerateNAlgorithm, TestSyclGenerateN) {
 }
 
 TEST_F(GenerateNAlgorithm, TestSycl2GenerateN) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = {1, 1, 1, 1, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = {1, 1, 1, 1, 5, 6, 7, 8};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class GenerateN2Algorithm> snp(q);
@@ -88,8 +90,8 @@ TEST_F(GenerateNAlgorithm, TestSycl2GenerateN) {
 }
 
 TEST_F(GenerateNAlgorithm, TestSycl3GenerateN) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = v;
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = v;
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class GenerateN3Algorithm> snp(q);

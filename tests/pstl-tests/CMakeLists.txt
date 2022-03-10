@@ -6,11 +6,11 @@ function(compile_test source)
     add_executable(${test_name} ${source})
     target_link_libraries(${test_name} PUBLIC "${gtest_BINARY_DIR}/libgtest.a"
                                        PUBLIC "${gtest_BINARY_DIR}/libgtest_main.a"
-                                       PUBLIC "${CMAKE_THREAD_LIBS_INIT}")
+                                       PUBLIC "${CMAKE_THREAD_LIBS_INIT}"
+                                       PUBLIC "stdc++")
     add_dependencies(${test_name} gtest_main)
     add_dependencies(${test_name} gtest)
-    add_sycl_to_target(${test_name} ${CMAKE_CURRENT_BINARY_DIR}
-                                    ${CMAKE_CURRENT_SOURCE_DIR}/${source})
+    add_sycl_to_target(TARGET ${test_name})
     add_test(test.${test_name} ${test_name})
 endfunction()
 

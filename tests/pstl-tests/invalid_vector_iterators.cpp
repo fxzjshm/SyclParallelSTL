@@ -36,6 +36,8 @@
 #include <sycl/execution_policy>
 #include <experimental/algorithm>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 using namespace std::experimental::parallel;
 
 typedef sycl::helpers::negative_iterator_distance expected_exception;
@@ -44,8 +46,14 @@ class InvalidIterators : public testing::Test {
  public:
 };
 
+#if defined(SYCL_DEVICE_COPYABLE) && SYCL_DEVICE_COPYABLE
+// patch for foreign iterators
+template <typename T>
+struct sycl::is_device_copyable<std::reverse_iterator<T>> : std::true_type {};
+#endif
+
 TEST_F(InvalidIterators, TestReduce1) {
-  std::vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class TestReduce1> snp(q);
@@ -53,7 +61,7 @@ TEST_F(InvalidIterators, TestReduce1) {
 }
 
 TEST_F(InvalidIterators, TestReduce2) {
-  std::vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class TestReduce2> snp(q);
@@ -62,8 +70,8 @@ TEST_F(InvalidIterators, TestReduce2) {
 }
 
 TEST_F(InvalidIterators, TestReduce3) {
-  std::vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
-  std::vector<int> result = {22};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
+  sycl::helpers::usm_vector<int> result = {22};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class TestReduce3> snp(q);
@@ -73,7 +81,7 @@ TEST_F(InvalidIterators, TestReduce3) {
 }
 
 TEST_F(InvalidIterators, TestTransformReduce1) {
-  std::vector<int> v = {2, 1, 3, 4};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 4};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class TestTransformReduce1> snp(q);
@@ -84,7 +92,7 @@ TEST_F(InvalidIterators, TestTransformReduce1) {
 }
 
 TEST_F(InvalidIterators, TestTransformReduce2) {
-  std::vector<int> v = {2, 1, 3, 4};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 4};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class TestTransformReduce2> snp(q);
@@ -96,7 +104,7 @@ TEST_F(InvalidIterators, TestTransformReduce2) {
 }
 
 TEST_F(InvalidIterators, TestTransformReduce3) {
-  std::vector<int> v = {2, 1, 3, 4};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 4};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class TestTransformReduce3> snp(q);
@@ -108,7 +116,7 @@ TEST_F(InvalidIterators, TestTransformReduce3) {
 }
 
 TEST_F(InvalidIterators, TestCountIf1) {
-  std::vector<float> v;
+  sycl::helpers::usm_vector<float> v;
   int n_elems = 128;
 
   for (int i = 0; i < n_elems; i++) {
@@ -125,7 +133,7 @@ TEST_F(InvalidIterators, TestCountIf1) {
 }
 
 TEST_F(InvalidIterators, TestCountIf2) {
-  std::vector<float> v;
+  sycl::helpers::usm_vector<float> v;
   int n_elems = 128;
 
   for (int i = 0; i < n_elems; i++) {
@@ -142,7 +150,7 @@ TEST_F(InvalidIterators, TestCountIf2) {
 }
 
 TEST_F(InvalidIterators, TestCountIf3) {
-  std::vector<float> v;
+  sycl::helpers::usm_vector<float> v;
   int n_elems = 128;
 
   for (int i = 0; i < n_elems; i++) {

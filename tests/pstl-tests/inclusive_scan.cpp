@@ -33,6 +33,8 @@
 #include <sycl/execution_policy>
 #include <experimental/algorithm>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 using namespace std::experimental::parallel;
 
 struct InclusiveScanAlgorithm : public testing::Test {};
@@ -58,8 +60,8 @@ struct multiplies {
   }
 };
 
-template <typename T, class BinaryOperation>
-void inclusive_scan_gold(std::vector<T>& v, T init = 0,
+template <typename T, typename Alloc, class BinaryOperation>
+void inclusive_scan_gold(std::vector<T, Alloc>& v, T init = 0,
                          BinaryOperation bop = plus<T>()) {
   v[0] = bop(v[0], init);
   for (auto i = std::next(v.begin()); i != v.end(); i++) {
@@ -69,8 +71,8 @@ void inclusive_scan_gold(std::vector<T>& v, T init = 0,
 
 // test the gold computation against a known value
 TEST_F(InclusiveScanAlgorithm, TestSTDInclusiveScan) {
-  std::vector<int> v    = {5, 1,  6,  2,  6,  2,  5,  7};
-  std::vector<int> gold = {5, 6, 12, 14, 20, 22, 27, 34};
+  sycl::helpers::usm_vector<int> v    = {5, 1,  6,  2,  6,  2,  5,  7};
+  sycl::helpers::usm_vector<int> gold = {5, 6, 12, 14, 20, 22, 27, 34};
 
   inclusive_scan_gold(v, 0, plus<int>());
 
@@ -83,8 +85,8 @@ TEST_F(InclusiveScanAlgorithm, TestSTDInclusiveScan) {
 // 3: custom addition and initial value
 
 TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanPowerOfTwo1) {
-  std::vector<int> v = {5, 1, 6, 2, 6, 2, 5, 7};
-  std::vector<int> gold(v);
+  sycl::helpers::usm_vector<int> v = {5, 1, 6, 2, 6, 2, 5, 7};
+  sycl::helpers::usm_vector<int> gold(v);
 
   inclusive_scan_gold(gold, 0, plus<int>());
 
@@ -97,8 +99,8 @@ TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanPowerOfTwo1) {
 }
 
 TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanPowerOfTwo2) {
-  std::vector<int> v = {5, 1, 6, 2, 6, 2, 5, 7};
-  std::vector<int> gold(v);
+  sycl::helpers::usm_vector<int> v = {5, 1, 6, 2, 6, 2, 5, 7};
+  sycl::helpers::usm_vector<int> gold(v);
 
   inclusive_scan_gold(gold, 0, plus<int>());
 
@@ -112,8 +114,8 @@ TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanPowerOfTwo2) {
 }
 
 TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanPowerOfTwo3) {
-  std::vector<int> v = {5, 1, 6, 2, 6, 2, 5, 7};
-  std::vector<int> gold(v);
+  sycl::helpers::usm_vector<int> v = {5, 1, 6, 2, 6, 2, 5, 7};
+  sycl::helpers::usm_vector<int> gold(v);
 
   inclusive_scan_gold(gold, 10, plus<int>());
 
@@ -131,8 +133,8 @@ TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanPowerOfTwo3) {
 // 2: Special default value
 
 TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanMultOperation1) {
-  std::vector<int> v = {5, 1, 6, 2, 6, 2, 5, 7};
-  std::vector<int> gold(v);
+  sycl::helpers::usm_vector<int> v = {5, 1, 6, 2, 6, 2, 5, 7};
+  sycl::helpers::usm_vector<int> gold(v);
 
   inclusive_scan_gold(gold, 0, multiplies<int>());
 
@@ -146,8 +148,8 @@ TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanMultOperation1) {
 }
 
 TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanMultOperation2) {
-  std::vector<int> v = {5, 1, 6, 2, 6, 2, 5, 7};
-  std::vector<int> gold(v);
+  sycl::helpers::usm_vector<int> v = {5, 1, 6, 2, 6, 2, 5, 7};
+  sycl::helpers::usm_vector<int> gold(v);
 
   inclusive_scan_gold(gold, 42, multiplies<int>());
 
@@ -166,8 +168,8 @@ TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanMultOperation2) {
 // 3: custom addition and initial value
 
 TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanNonPowerOfTwo1) {
-  std::vector<int> v = {5, 1, 6, 2, 6, 2, 5};
-  std::vector<int> gold(v);
+  sycl::helpers::usm_vector<int> v = {5, 1, 6, 2, 6, 2, 5};
+  sycl::helpers::usm_vector<int> gold(v);
 
   inclusive_scan_gold(gold, 0, std::plus<int>());
 
@@ -180,8 +182,8 @@ TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanNonPowerOfTwo1) {
 }
 
 TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanNonPowerOfTwo2) {
-  std::vector<int> v = {5, 1, 6, 2, 6, 2, 5};
-  std::vector<int> gold(v);
+  sycl::helpers::usm_vector<int> v = {5, 1, 6, 2, 6, 2, 5};
+  sycl::helpers::usm_vector<int> gold(v);
 
   inclusive_scan_gold(gold, 0, std::plus<int>());
 
@@ -195,8 +197,8 @@ TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanNonPowerOfTwo2) {
 }
 
 TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanNonPowerOfTwo3) {
-  std::vector<int> v = {5, 1, 6, 2, 6, 2, 5};
-  std::vector<int> gold(v);
+  sycl::helpers::usm_vector<int> v = {5, 1, 6, 2, 6, 2, 5};
+  sycl::helpers::usm_vector<int> gold(v);
 
   inclusive_scan_gold(gold, 10, std::plus<int>());
 
@@ -211,9 +213,9 @@ TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanNonPowerOfTwo3) {
 
 // test of a large power of two sized input
 TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanLargePowerOfTwo) {
-  std::vector<int> v(1 << 12);
+  sycl::helpers::usm_vector<int> v(1 << 12);
   std::fill(v.begin(), v.end(), 42);
-  std::vector<int> gold(v);
+  sycl::helpers::usm_vector<int> gold(v);
 
   inclusive_scan_gold(gold, 0, std::plus<int>());
 
@@ -229,9 +231,9 @@ TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanLargePowerOfTwo) {
 // test of a variety of non power of two sized input
 TEST_F(InclusiveScanAlgorithm, TestSyclInclusiveScanNonPowerOfTwoRange) {
   for (int i = 5; i < 14; i++) {
-    std::vector<int> v((1 << i) - 1);
+    sycl::helpers::usm_vector<int> v((1 << i) - 1);
     std::fill(v.begin(), v.end(), 42);
-    std::vector<int> gold(v);
+    sycl::helpers::usm_vector<int> gold(v);
 
     inclusive_scan_gold(gold, 0, std::plus<int>());
 

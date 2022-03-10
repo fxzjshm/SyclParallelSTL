@@ -33,6 +33,8 @@
 #include <sycl/execution_policy>
 #include <experimental/algorithm>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 using namespace std::experimental::parallel;
 
 class ReduceAlgorithm : public testing::Test {
@@ -40,7 +42,7 @@ class ReduceAlgorithm : public testing::Test {
 };
 
 TEST_F(ReduceAlgorithm, TestSyclReduce) {
-  std::vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
   int result = 22;
 
   cl::sycl::queue q;
@@ -51,8 +53,8 @@ TEST_F(ReduceAlgorithm, TestSyclReduce) {
 }
 
 TEST_F(ReduceAlgorithm, TestSyclReduce2) {
-  std::vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
-  std::vector<int> result = {32, 30, 29, 26, 21, 18, 14, 13};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
+  sycl::helpers::usm_vector<int> result = {32, 30, 29, 26, 21, 18, 14, 13};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class Reduce2Algorithm> snp(q);
@@ -62,8 +64,8 @@ TEST_F(ReduceAlgorithm, TestSyclReduce2) {
 }
 
 TEST_F(ReduceAlgorithm, TestSyclReduce3) {
-  std::vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
-  std::vector<int> result = {32, 30, 29, 26, 21, 18, 14, 13};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
+  sycl::helpers::usm_vector<int> result = {32, 30, 29, 26, 21, 18, 14, 13};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class Reduce3Algorithm> snp(q);
@@ -73,8 +75,8 @@ TEST_F(ReduceAlgorithm, TestSyclReduce3) {
 }
 
 TEST_F(ReduceAlgorithm, TestSyclReduce4) {
-  std::vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
-  std::vector<int> result = {32, 30, 29, 26, 21, 18, 14, 13};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 5, 3, 4, 1, 3};
+  sycl::helpers::usm_vector<int> result = {32, 30, 29, 26, 21, 18, 14, 13};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class Reduce4Algorithm> snp(q);
@@ -85,7 +87,7 @@ TEST_F(ReduceAlgorithm, TestSyclReduce4) {
 }
 
 TEST_F(ReduceAlgorithm, TestSyclReduce5) {
-  std::vector<int> v;
+  sycl::helpers::usm_vector<int> v;
   int n = 256;
 
   for (int i = 0; i < n; i++) {
@@ -103,7 +105,7 @@ TEST_F(ReduceAlgorithm, TestSyclReduce5) {
 }
 
 TEST_F(ReduceAlgorithm, TestSyclReduce6) {
-  std::vector<int> v;
+  sycl::helpers::usm_vector<int> v;
   int n = 128;
 
   for (int i = 0; i < n; i++) {
@@ -121,7 +123,7 @@ TEST_F(ReduceAlgorithm, TestSyclReduce6) {
 }
 
 TEST_F(ReduceAlgorithm, TestSyclReduce7) {
-  std::vector<int> v;
+  sycl::helpers::usm_vector<int> v;
   int n = 128;
 
   for (int i = 0; i < n; i++) {

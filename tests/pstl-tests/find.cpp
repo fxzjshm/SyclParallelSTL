@@ -34,6 +34,8 @@
 #include <sycl/execution_policy>
 #include <experimental/algorithm>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 namespace parallel = std::experimental::parallel;
 
 class FindAlgorithm : public testing::Test {
@@ -41,7 +43,7 @@ class FindAlgorithm : public testing::Test {
 };
 
 TEST_F(FindAlgorithm, TestSyclFind) {
-  std::vector<float> v;
+  sycl::helpers::usm_vector<float> v;
   int n_elems = 128;
   float search_val = 10.0f;
   int val_idx = std::rand() % n_elems;
@@ -93,7 +95,7 @@ TEST_F(FindAlgorithm, TestSyclListFind) {
 }
 */
 TEST_F(FindAlgorithm, TestSyclFindIf) {
-  std::vector<float> v;
+  sycl::helpers::usm_vector<float> v;
   int n_elems = 128;
   float search_val = 10.0f;
   int val_idx = std::rand() % n_elems;
@@ -147,7 +149,7 @@ TEST_F(FindAlgorithm, TestSyclListFindIf) {
 }
 */
 TEST_F(FindAlgorithm, TestSyclFindIfNot) {
-  std::vector<float> v;
+  sycl::helpers::usm_vector<float> v;
   int n_elems = 128;
   float search_val = 10.0f;
   int val_idx = std::rand() % n_elems;
@@ -202,7 +204,7 @@ TEST_F(FindAlgorithm, TestSyclListFindIfNot) {
 */
 TEST_F(FindAlgorithm, TestSyclFindNotFound) {
   int n_elems = 128;
-  std::vector<float> v(n_elems, 9.0f);
+  sycl::helpers::usm_vector<float> v(n_elems, 9.0f);
   float search_val = 10.0f;
 
   auto res_std = std::find(begin(v), end(v), search_val);

@@ -33,13 +33,15 @@
 #include <experimental/algorithm>
 #include <sycl/execution_policy>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 namespace parallel = std::experimental::parallel;
 
 struct ReplaceAlgorithm : public testing::Test {};
 
 TEST_F(ReplaceAlgorithm, TestSyclReplace) {
-  std::vector<int> input = {1, 2, 1, 4, 1, 6, 1, 8};
-  std::vector<int> expected(input.size());
+  sycl::helpers::usm_vector<int> input = {1, 2, 1, 4, 1, 6, 1, 8};
+  sycl::helpers::usm_vector<int> expected(input.size());
 
   std::replace_copy(begin(input), end(input), begin(expected), 1, 10);
 

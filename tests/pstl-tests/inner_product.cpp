@@ -37,13 +37,15 @@
 #include <sycl/execution_policy>
 #include <experimental/algorithm>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 using namespace std::experimental::parallel;
 
 struct InnerProductAlgorithm : public testing::Test {};
 
 TEST_F(InnerProductAlgorithm, TestStdInnerProduct) {
-  std::vector<int> v1 = {2, 2, 3, 1};
-  std::vector<int> v2 = {4, 2, 1, 3};
+  sycl::helpers::usm_vector<int> v1 = {2, 2, 3, 1};
+  sycl::helpers::usm_vector<int> v2 = {4, 2, 1, 3};
   int result = 18;
   int value = 0;
 
@@ -53,8 +55,8 @@ TEST_F(InnerProductAlgorithm, TestStdInnerProduct) {
 }
 
 TEST_F(InnerProductAlgorithm, TestSyclInnerProduct) {
-  std::vector<int> v1 = {2, 2, 3, 1};
-  std::vector<int> v2 = {4, 2, 1, 3};
+  sycl::helpers::usm_vector<int> v1 = {2, 2, 3, 1};
+  sycl::helpers::usm_vector<int> v2 = {4, 2, 1, 3};
   int result = 28;
   int value = 10;
 
@@ -66,8 +68,8 @@ TEST_F(InnerProductAlgorithm, TestSyclInnerProduct) {
 }
 
 TEST_F(InnerProductAlgorithm, TestSycl2InnerProduct) {
-  std::vector<int> v1 = {2, 2, 3, 1, 5, 1, 1, 1};
-  std::vector<int> v2 = {4, 2, 1, 3, 5, 1, 1, 1};
+  sycl::helpers::usm_vector<int> v1 = {2, 2, 3, 1, 5, 1, 1, 1};
+  sycl::helpers::usm_vector<int> v2 = {4, 2, 1, 3, 5, 1, 1, 1};
   int result = 46;
   int value = 0;
 
@@ -79,8 +81,8 @@ TEST_F(InnerProductAlgorithm, TestSycl2InnerProduct) {
 }
 
 TEST_F(InnerProductAlgorithm, TestSycl3InnerProduct) {
-  std::vector<int> v1 = {2, 2, 3, 1, 5, 1, 1};
-  std::vector<int> v2 = {4, 2, 1, 3, 5, 1, 1};
+  sycl::helpers::usm_vector<int> v1 = {2, 2, 3, 1, 5, 1, 1};
+  sycl::helpers::usm_vector<int> v2 = {4, 2, 1, 3, 5, 1, 1};
   int result = 45;
   int value = 0;
 
@@ -92,8 +94,8 @@ TEST_F(InnerProductAlgorithm, TestSycl3InnerProduct) {
 }
 
 TEST_F(InnerProductAlgorithm, TestSycl4InnerProduct) {
-  std::vector<int> v1 = {2, 2, 3, 1};
-  std::vector<int> v2 = {4, 2, 1, 3};
+  sycl::helpers::usm_vector<int> v1 = {2, 2, 3, 1};
+  sycl::helpers::usm_vector<int> v2 = {4, 2, 1, 3};
   int result = 28;
   int value = 10;
 
@@ -107,8 +109,8 @@ TEST_F(InnerProductAlgorithm, TestSycl4InnerProduct) {
 }
 
 TEST_F(InnerProductAlgorithm, TestSycl5InnerProduct) {
-  std::vector<float> v1 = {2.0, 2.0, 3.0, 1.0};
-  std::vector<float> v2 = {4.0, 2.0, 1.0, 3.0};
+  sycl::helpers::usm_vector<float> v1 = {2.0, 2.0, 3.0, 1.0};
+  sycl::helpers::usm_vector<float> v2 = {4.0, 2.0, 1.0, 3.0};
   float result = 28.0;
   float value = 10.0;
 
@@ -147,8 +149,8 @@ TEST_F(InnerProductAlgorithm, TestSycl6InnerProduct) {
 }
 */
 TEST_F(InnerProductAlgorithm, TestSycl7InnerProduct) {
-  std::vector<int> v1;
-  std::vector<int> v2;
+  sycl::helpers::usm_vector<int> v1;
+  sycl::helpers::usm_vector<int> v2;
   int n_elems = 128;
   for (int i = 0; i < n_elems; i++) {
     v1.push_back(1);
@@ -165,8 +167,8 @@ TEST_F(InnerProductAlgorithm, TestSycl7InnerProduct) {
 }
 
 TEST_F(InnerProductAlgorithm, TestSycl8InnerProduct) {
-  std::vector<int> v1;
-  std::vector<int> v2;
+  sycl::helpers::usm_vector<int> v1;
+  sycl::helpers::usm_vector<int> v2;
   int n_elems = 128;
   for (int i = 0; i < n_elems; i++) {
     v1.push_back(1);

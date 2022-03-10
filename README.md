@@ -1,3 +1,25 @@
+Changes of this fork:
+* important modifications:
+    * functions will not make buffer from inputs and outputs; instead, they operate directly on input/output iterators, so a usm_allocator or something similar is required if running on hetegorous platforms. (see commit 5913425, c6546c9, 1394ca9)
+* added functions:
+    * copy_if
+    * transform_if
+    * adjacent_difference
+    * copy
+    * gather
+    * iota
+    * reduce_by_key
+    * sort_by_key
+* modified functions:
+    * sort:
+        * use merge_sort_on_gpu learned from Boost.Compute when size != 2^n
+        * negate meaning of Comp so it's in tune with STL
+    * buffer_algorithms:
+        * compute_mapreduce_descriptor: restrict work item counts in case `sycl::info::device::max_work_item_sizes` is enormous
+        * fix misuse of `cgh.parallel_for_work_group()`
+------
+
+
 SYCL Parallel STL [![Build Status](https://travis-ci.org/KhronosGroup/SyclParallelSTL.svg?branch=master)](https://travis-ci.org/KhronosGroup/SyclParallelSTL)
 ==============================
 
@@ -45,7 +67,7 @@ SyclParallelSTL exposes a SYCL policy in the experimental::parallel namespace
 that can be passed to standard STL algorithms for them to run on SYCL.
 Currently, only some STL algorithms are implemented, such as:
 
-* sort : Bitonic sort for ranges where the size is a power of two, or sequential
+* sort : Bitonic sort for ranges where the size is a power of two, or merge
   sort otherwise.
 * transform : Parallel iteration (one thread per element) on the device.
 * fill : Parallel iteration (one thread per element) on the device.

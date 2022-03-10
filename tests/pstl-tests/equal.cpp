@@ -34,12 +34,14 @@
 #include <experimental/algorithm>
 #include <sycl/execution_policy>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 namespace parallel = std::experimental::parallel;
 
 struct EqualAlgorithm : public testing::Test {};
 
 TEST_F(EqualAlgorithm, EqualTrue) {
-  std::vector<int> input = {2, 4, 6, 8, 10, 12, 14, 16};
+  sycl::helpers::usm_vector<int> input = {2, 4, 6, 8, 10, 12, 14, 16};
 
   sycl::sycl_execution_policy<class EqualAlgorithmTrue> snp;
   auto result =
@@ -50,7 +52,7 @@ TEST_F(EqualAlgorithm, EqualTrue) {
 }
 
 TEST_F(EqualAlgorithm, EqualTrueJustBegin) {
-  std::vector<int> input = {2, 4, 6, 8, 10, 12, 14, 16};
+  sycl::helpers::usm_vector<int> input = {2, 4, 6, 8, 10, 12, 14, 16};
 
   sycl::sycl_execution_policy<class EqualAlgorithmTrueJustBegin> snp;
   auto result = parallel::equal(snp, begin(input), end(input), begin(input),
@@ -60,8 +62,8 @@ TEST_F(EqualAlgorithm, EqualTrueJustBegin) {
 }
 
 TEST_F(EqualAlgorithm, EqualFalse) {
-  std::vector<int> input1 = {2, 4, 6, 8, 10, 12, 14, 16};
-  std::vector<int> input2 = {2, 4, 6, 8, 0, 12, 14, 16};
+  sycl::helpers::usm_vector<int> input1 = {2, 4, 6, 8, 10, 12, 14, 16};
+  sycl::helpers::usm_vector<int> input2 = {2, 4, 6, 8, 0, 12, 14, 16};
 
   sycl::sycl_execution_policy<class EqualAlgorithmFalse> snp;
   auto result =
@@ -72,8 +74,8 @@ TEST_F(EqualAlgorithm, EqualFalse) {
 }
 
 TEST_F(EqualAlgorithm, EqualCustomPredicate) {
-  std::vector<int> input1 = {2, 4, 6, 8, 10, 12, 14, 16};
-  std::vector<int> input2 = {0, 0, 0, 0, 0, 0, 0, 0};
+  sycl::helpers::usm_vector<int> input1 = {2, 4, 6, 8, 10, 12, 14, 16};
+  sycl::helpers::usm_vector<int> input2 = {0, 0, 0, 0, 0, 0, 0, 0};
 
   sycl::sycl_execution_policy<class EqualAlgorithmCustomPredicate> snp;
   auto result =
@@ -84,7 +86,7 @@ TEST_F(EqualAlgorithm, EqualCustomPredicate) {
 }
 
 TEST_F(EqualAlgorithm, EqualNoPredicate) {
-  std::vector<int> input = {2, 4, 6, 8, 10, 12, 14, 16};
+  sycl::helpers::usm_vector<int> input = {2, 4, 6, 8, 10, 12, 14, 16};
 
   sycl::sycl_execution_policy<class EqualAlgorithmNoPredicate> snp;
   auto result = parallel::equal(snp, begin(input), end(input), begin(input),
@@ -94,7 +96,7 @@ TEST_F(EqualAlgorithm, EqualNoPredicate) {
 }
 
 TEST_F(EqualAlgorithm, EqualNoPredicateJustBegin) {
-  std::vector<int> input = {2, 4, 6, 8, 10, 12, 14, 16};
+  sycl::helpers::usm_vector<int> input = {2, 4, 6, 8, 10, 12, 14, 16};
 
   sycl::sycl_execution_policy<class EqualAlgorithmNoPredicateJustBegin> snp;
   auto result = parallel::equal(snp, begin(input), end(input), begin(input));
@@ -103,7 +105,7 @@ TEST_F(EqualAlgorithm, EqualNoPredicateJustBegin) {
 }
 
 TEST_F(EqualAlgorithm, EqualDifferentLength) {
-  std::vector<int> input = {2, 4, 6, 8, 10, 12, 14, 16};
+  sycl::helpers::usm_vector<int> input = {2, 4, 6, 8, 10, 12, 14, 16};
 
   sycl::sycl_execution_policy<class EqualAlgorithmShorter> snp;
   auto result =
@@ -114,7 +116,7 @@ TEST_F(EqualAlgorithm, EqualDifferentLength) {
 }
 
 TEST_F(EqualAlgorithm, EqualEmpty) {
-  std::vector<int> input{};
+  sycl::helpers::usm_vector<int> input{};
 
   sycl::sycl_execution_policy<class EqualAlgorithmEmpty> snp;
   auto result =
@@ -127,8 +129,8 @@ TEST_F(EqualAlgorithm, EqualEmpty) {
 }
 
 TEST_F(EqualAlgorithm, NotEqualFloat) {
-  std::vector<float> input1{1.0f, 1.5f, 2.0f, 4.0f};
-  std::vector<float> input2{1.0f, 1.2f, 2.0f, 4.0f};
+  sycl::helpers::usm_vector<float> input1{1.0f, 1.5f, 2.0f, 4.0f};
+  sycl::helpers::usm_vector<float> input2{1.0f, 1.2f, 2.0f, 4.0f};
 
   sycl::sycl_execution_policy<class EqualAlgorithmNotEqualFloat> snp;
   auto result =

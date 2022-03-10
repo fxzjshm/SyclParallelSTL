@@ -35,6 +35,8 @@
 #include <experimental/algorithm>
 #include <sycl/execution_policy>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 namespace parallel = std::experimental::parallel;
 
 struct RotateAlgorithm : public testing::Test {};
@@ -55,36 +57,40 @@ void test_rotate(ExecutionPolicy &sep, C &in, ForwardIt middle) {
 TEST_F(RotateAlgorithm, TestSyclRotate0) {
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class RotateAlgorithm0> sep(q);
-  std::vector<int> in(0);
+  sycl::helpers::usm_vector<int> in(0);
   test_rotate(sep, in, begin(in));
 }
 
 TEST_F(RotateAlgorithm, TestSyclRotate1) {
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class RotateAlgorithm1> sep(q);
-  std::vector<int> in{42};
+  sycl::helpers::usm_vector<int> in{42};
   test_rotate(sep, in, begin(in));
 }
 
 TEST_F(RotateAlgorithm, TestSyclRotate8) {
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class RotateAlgorithm8> sep(q);
-  std::array<int,8> in{1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> in{1, 2, 3, 4, 5, 6, 7, 8};
   test_rotate(sep, in, std::next(begin(in)));
 }
 
 TEST_F(RotateAlgorithm, TestSyclRotate9) {
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class RotateAlgorithm9> sep(q);
-  std::vector<int> in{1, 2, 3, 4, 5, 6, 7, 8, 9};
+  sycl::helpers::usm_vector<int> in{1, 2, 3, 4, 5, 6, 7, 8, 9};
   test_rotate(sep, in, std::next(begin(in),0));
   test_rotate(sep, in, std::next(begin(in),4));
   test_rotate(sep, in, std::next(begin(in),8));
 }
 
+// error: static_assert failed due to requirement 'is_device_copyable<std::_Deque_iterator<int, int &, int *>, void>::value ||
+// detail::IsDeprecatedDeviceCopyable<std::_Deque_iterator<int, int &, int *>, void>::value' "The specified type is not device copyable"
+#if !SYCL_DEVICE_COPYABLE
 TEST_F(RotateAlgorithm, TestSyclRotate10) {
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class RotateAlgorithm10> sep(q);
   std::deque<int> in{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   test_rotate(sep, in, std::next(begin(in),6));
 }
+#endif

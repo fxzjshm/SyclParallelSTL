@@ -32,13 +32,15 @@
 #include <sycl/execution_policy>
 #include <experimental/algorithm>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 using namespace std::experimental::parallel;
 
 struct FillAlgorithm : public testing::Test {};
 
 TEST_F(FillAlgorithm, TestStdFill) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
 
   std::fill(v.begin(), v.end(), 1);
 
@@ -46,8 +48,8 @@ TEST_F(FillAlgorithm, TestStdFill) {
 }
 
 TEST_F(FillAlgorithm, TestSyclFill) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class FillAlgorithm> snp(q);

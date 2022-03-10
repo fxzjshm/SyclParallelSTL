@@ -10,6 +10,8 @@
 // TODO move to execution_policy after test
 #include <sycl/algorithm/reduce_by_key.hpp>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 using namespace std::experimental::parallel;
 
 // adapted from Boost.Compute
@@ -41,11 +43,11 @@ TEST_F(ReduceByKeyAlgorithm, reduce_by_key_int)
     int keys[] = { 0, 2, -3, -3, -3, -3, -3, 4 };
     int data[] = { 1, 1, 1, 1, 1, 2, 5, 1 };
     
-    std::vector<int> keys_input(keys, keys + 8);
-    std::vector<int> values_input(data, data + 8);
+    sycl::helpers::usm_vector<int> keys_input(keys, keys + 8);
+    sycl::helpers::usm_vector<int> values_input(data, data + 8);
     
-    std::vector<int> keys_output(8);
-    std::vector<int> values_output(8);
+    sycl::helpers::usm_vector<int> keys_output(8);
+    sycl::helpers::usm_vector<int> values_output(8);
 
     // reduce by key
     size_t count = sycl::impl::reduce_by_key(exec,
@@ -53,8 +55,8 @@ TEST_F(ReduceByKeyAlgorithm, reduce_by_key_int)
                                              keys_output.begin(), values_output.begin()).first - keys_output.begin();
     // keys_output = { 0, 2, -3, 4 }
     // values_output = { 1, 1, 10, 1 }
-    std::vector<int> keys_output_expected = { 0, 2, -3, 4 };
-    std::vector<int> values_output_expected = { 1, 1, 10, 1 };
+    sycl::helpers::usm_vector<int> keys_output_expected = { 0, 2, -3, 4 };
+    sycl::helpers::usm_vector<int> values_output_expected = { 1, 1, 10, 1 };
     //! [reduce_by_key_int]
     EXPECT_TRUE(std::equal(begin(keys_output), begin(keys_output) + count, begin(keys_output_expected)));
     EXPECT_TRUE(std::equal(begin(values_output), begin(values_output) + count, begin(values_output_expected)));
@@ -63,11 +65,11 @@ TEST_F(ReduceByKeyAlgorithm, reduce_by_key_int)
 TEST_F(ReduceByKeyAlgorithm, reduce_by_key_int_long_vector)
 {
     size_t size = 1024;
-    std::vector<int> keys_input(size, int(0));
-    std::vector<int> values_input(size, int(1));
+    sycl::helpers::usm_vector<int> keys_input(size, int(0));
+    sycl::helpers::usm_vector<int> values_input(size, int(1));
 
-    std::vector<int> keys_output(size);
-    std::vector<int> values_output(size);
+    sycl::helpers::usm_vector<int> keys_output(size);
+    sycl::helpers::usm_vector<int> values_output(size);
 
     sycl::impl::reduce_by_key(exec,
                               keys_input.begin(), keys_input.end(), values_input.begin(),
@@ -85,8 +87,8 @@ TEST_F(ReduceByKeyAlgorithm, reduce_by_key_int_long_vector)
                                              keys_input.begin(), keys_input.end(), values_input.begin(),
                                              keys_output.begin(), values_output.begin()).first - keys_output.begin();
 
-    std::vector<int> keys_output_expected = { 0, 1, 2, 3 };
-    std::vector<int> values_output_expected = { 137, 540, 324, 23 };
+    sycl::helpers::usm_vector<int> keys_output_expected = { 0, 1, 2, 3 };
+    sycl::helpers::usm_vector<int> values_output_expected = { 137, 540, 324, 23 };
 
     EXPECT_TRUE(std::equal(begin(keys_output), begin(keys_output) + count, begin(keys_output_expected)));
     EXPECT_TRUE(std::equal(begin(values_output), begin(values_output) + count, begin(values_output_expected)));
@@ -94,11 +96,11 @@ TEST_F(ReduceByKeyAlgorithm, reduce_by_key_int_long_vector)
 
 TEST_F(ReduceByKeyAlgorithm, reduce_by_key_empty_vector)
 {
-    std::vector<int> keys_input;
-    std::vector<int> values_input;
+    sycl::helpers::usm_vector<int> keys_input;
+    sycl::helpers::usm_vector<int> values_input;
 
-    std::vector<int> keys_output;
-    std::vector<int> values_output;
+    sycl::helpers::usm_vector<int> keys_output;
+    sycl::helpers::usm_vector<int> values_output;
 
     sycl::impl::reduce_by_key(exec,
                       keys_input.begin(), keys_input.end(), values_input.begin(),
@@ -113,11 +115,11 @@ TEST_F(ReduceByKeyAlgorithm, reduce_by_key_int_one_key_value)
     int keys[] = { 22 };
     int data[] = { -9 };
 
-    std::vector<int> keys_input(keys, keys + 1);
-    std::vector<int> values_input(data, data + 1);
+    sycl::helpers::usm_vector<int> keys_input(keys, keys + 1);
+    sycl::helpers::usm_vector<int> values_input(data, data + 1);
 
-    std::vector<int> keys_output(1);
-    std::vector<int> values_output(1);
+    sycl::helpers::usm_vector<int> keys_output(1);
+    sycl::helpers::usm_vector<int> values_output(1);
 
     sycl::impl::reduce_by_key(exec,
                       keys_input.begin(), keys_input.end(), values_input.begin(),
@@ -132,19 +134,19 @@ TEST_F(ReduceByKeyAlgorithm, reduce_by_key_int_min_max)
     int keys[] = { 0, 2, 2, 3, 3, 3, 3, 3, 4 };
     int data[] = { 1, 2, 1, -3, 1, 4, 2, 5, 77 };
 
-    std::vector<int> keys_input(keys, keys + 9);
-    std::vector<int> values_input(data, data + 9);
+    sycl::helpers::usm_vector<int> keys_input(keys, keys + 9);
+    sycl::helpers::usm_vector<int> values_input(data, data + 9);
 
-    std::vector<int> keys_output(9);
-    std::vector<int> values_output(9);
+    sycl::helpers::usm_vector<int> keys_output(9);
+    sycl::helpers::usm_vector<int> values_output(9);
 
     size_t count = sycl::impl::reduce_by_key(exec,
                                              keys_input.begin(), keys_input.end(), values_input.begin(),
                                              keys_output.begin(), values_output.begin(), std::equal_to<int>(), min_functor<int>()
                                             ).first - keys_output.begin();
 
-    std::vector<int> keys_output_expected = { 0, 2, 3,  4 };
-    std::vector<int> values_output_expected = { 1, 1, -3, 77 };
+    sycl::helpers::usm_vector<int> keys_output_expected = { 0, 2, 3,  4 };
+    sycl::helpers::usm_vector<int> values_output_expected = { 1, 1, -3, 77 };
 
     EXPECT_TRUE(std::equal(begin(keys_output), begin(keys_output) + count, begin(keys_output_expected)));
     EXPECT_TRUE(std::equal(begin(values_output), begin(values_output) + count, begin(values_output_expected)));
@@ -166,18 +168,18 @@ TEST_F(ReduceByKeyAlgorithm, reduce_by_key_float_max)
     int keys[] = { 0, 2, 2, 3, 3, 3, 3, 3, 4 };
     float data[] = { 1.0, 2.0, -1.5, -3.0, 1.0, -0.24, 2, 5, 77.1 };
 
-    std::vector<int> keys_input(keys, keys + 9);
-    std::vector<float> values_input(data, data + 9);
+    sycl::helpers::usm_vector<int> keys_input(keys, keys + 9);
+    sycl::helpers::usm_vector<float> values_input(data, data + 9);
 
-    std::vector<int> keys_output(9);
-    std::vector<float> values_output(9);
+    sycl::helpers::usm_vector<int> keys_output(9);
+    sycl::helpers::usm_vector<float> values_output(9);
 
     size_t count = sycl::impl::reduce_by_key(exec,
                                              keys_input.begin(), keys_input.end(), values_input.begin(),
                                              keys_output.begin(), values_output.begin(), std::equal_to<int>(), max_functor<int>()
                                             ).first - keys_output.begin();
 
-    std::vector<int> keys_output_expected = { 0, 2, 3,  4 };
+    sycl::helpers::usm_vector<int> keys_output_expected = { 0, 2, 3,  4 };
     EXPECT_TRUE(std::equal(begin(keys_output), begin(keys_output) + count, begin(keys_output_expected)));
     EXPECT_TRUE(std::abs(float(values_output[0]) - 1.0f) < 1e-4f);
     EXPECT_TRUE(std::abs(float(values_output[1]) - 2.0f) < 1e-4f);

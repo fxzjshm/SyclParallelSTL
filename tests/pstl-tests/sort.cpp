@@ -33,6 +33,8 @@
 #include <sycl/execution_policy>
 #include <experimental/algorithm>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 using namespace std::experimental::parallel;
 
 struct SortAlgorithm : public testing::Test {
@@ -44,7 +46,7 @@ struct SortAlgorithm : public testing::Test {
 };
 
 TEST_F(SortAlgorithm, TestStdSort) {
-  std::vector<int> v = {2, 1, 3};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3};
 
   std::sort(v.begin(), v.end());
 
@@ -53,7 +55,7 @@ TEST_F(SortAlgorithm, TestStdSort) {
 
 TEST_F(SortAlgorithm, TestSyclSort) {
   {
-    std::vector<int> v(64);
+    sycl::helpers::usm_vector<int> v(64);
     std::generate(v.begin(), v.end(),
                   std::rand);  // Using the C function rand()
     // The bitonic sort is triggered with a power of two vector size
@@ -62,7 +64,7 @@ TEST_F(SortAlgorithm, TestSyclSort) {
   }
 
   {
-    std::vector<int> v(3);
+    sycl::helpers::usm_vector<int> v(3);
     std::generate(v.begin(), v.end(),
                   std::rand);  // Using the C function rand()
     // The bitonic sort is triggered with a power of two vector size
@@ -71,33 +73,33 @@ TEST_F(SortAlgorithm, TestSyclSort) {
   }
 
   {
-    std::array<int, 10> a;
+    sycl::helpers::usm_vector<int> a(10);
     std::generate(a.begin(), a.end(), std::rand);
     sort(*sycl_policy, a.begin(), a.end());
     EXPECT_TRUE(std::is_sorted(a.begin(), a.end()));
   }
 
   {
-    std::vector<int> v(2333), v2;
+    sycl::helpers::usm_vector<int> v(2333);
     std::generate(v.begin(), v.end(), std::rand);
+    sycl::helpers::usm_vector<int> v2(v.begin(), v.end());
     sort(*sycl_policy, v.begin(), v.end());
-    v2 = v;
     std::sort(v2.begin(), v2.end());
     EXPECT_TRUE(std::equal(v.begin(), v.end(), v2.begin()));
   }
 
   {
-    std::vector<int> v(233), v2;
+    sycl::helpers::usm_vector<int> v(233);
     std::generate(v.begin(), v.end(), std::rand);
+    sycl::helpers::usm_vector<int> v2(v.begin(), v.end());
     sort(*sycl_policy, v.begin(), v.end());
-    v2 = v;
     std::sort(v2.begin(), v2.end());
     EXPECT_TRUE(std::equal(v.begin(), v.end(), v2.begin()));
   }
 }
 
 TEST_F(SortAlgorithm, TestSycl2Sort) {
-  std::vector<int> v = {2, 1, 3, 7, 9, 5, 4};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 7, 9, 5, 4};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class SortAlgorithm2> snp(q);
@@ -108,7 +110,7 @@ TEST_F(SortAlgorithm, TestSycl2Sort) {
 }
 
 TEST_F(SortAlgorithm, TestSycl3Sort) {
-  std::vector<int> v = {2, 1, 3, 7, 9, 5, 4, 6};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 7, 9, 5, 4, 6};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class SortAlgorithm3> snp(q);

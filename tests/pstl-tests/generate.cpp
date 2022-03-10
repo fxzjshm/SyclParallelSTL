@@ -33,13 +33,15 @@
 #include <experimental/algorithm>
 #include <sycl/execution_policy>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 namespace parallel = std::experimental::parallel;
 
 struct GenerateAlgorithm : public testing::Test {};
 
 TEST_F(GenerateAlgorithm, TestStdGenerate) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
 
   std::generate(begin(v), end(v), []() { return 1; });
 
@@ -47,8 +49,8 @@ TEST_F(GenerateAlgorithm, TestStdGenerate) {
 }
 
 TEST_F(GenerateAlgorithm, TestSyclGenerate) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class GenerateAlgorithm> snp(q);

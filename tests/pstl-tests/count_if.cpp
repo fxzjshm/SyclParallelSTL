@@ -33,6 +33,8 @@
 #include <sycl/execution_policy>
 #include <experimental/algorithm>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 using namespace std::experimental::parallel;
 
 class CountIfAlgorithm : public testing::Test {
@@ -40,7 +42,7 @@ class CountIfAlgorithm : public testing::Test {
 };
 
 TEST_F(CountIfAlgorithm, TestSyclCountIf) {
-  std::vector<float> v;
+  sycl::helpers::usm_vector<float> v;
   int n_elems = 128;
 
   for (int i = 0; i < n_elems; i++) {
@@ -48,13 +50,15 @@ TEST_F(CountIfAlgorithm, TestSyclCountIf) {
     v.push_back(x);
   }
 
+  auto predicate = [=](float v1) { return v1 < 0.5; };
+
   int res_std =
-      std::count_if(v.begin(), v.end(), [=](float v1) { return v1 < 0.5; });
+      std::count_if(v.begin(), v.end(), predicate);
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class CountIfAlgorithm2> snp(q);
   int res_sycl =
-      count_if(snp, v.begin(), v.end(), [=](float v1) { return v1 < 0.5; });
+      count_if(snp, v.begin(), v.end(), predicate);
 
   EXPECT_TRUE(res_std == res_sycl);
 }

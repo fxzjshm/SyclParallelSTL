@@ -34,12 +34,14 @@
 #include <sycl/execution_policy>
 #include <experimental/algorithm>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 using namespace std::experimental::parallel;
 
 struct TransformReduceAlgorithm : public testing::Test {};
 
 TEST_F(TransformReduceAlgorithm, TestSyclTransformReduce) {
-  std::vector<int> v = {2, 1, 3, 4};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 4};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class TransformAlgorithm> snp(q);
@@ -51,7 +53,7 @@ TEST_F(TransformReduceAlgorithm, TestSyclTransformReduce) {
 }
 
 TEST_F(TransformReduceAlgorithm, TestSyclTransformReduce2) {
-  std::vector<int> v;
+  sycl::helpers::usm_vector<int> v;
   int n = 128;
 
   for (int i = 0; i < n; i++) {

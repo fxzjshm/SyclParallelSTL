@@ -33,13 +33,15 @@
 #include <experimental/algorithm>
 #include <sycl/execution_policy>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 namespace parallel = std::experimental::parallel;
 
 struct FillNAlgorithm : public testing::Test {};
 
 TEST_F(FillNAlgorithm, TestStdFillN) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
 
   std::fill_n(begin(v), v.size(), 1);
 
@@ -47,8 +49,8 @@ TEST_F(FillNAlgorithm, TestStdFillN) {
 }
 
 TEST_F(FillNAlgorithm, TestStd2FillN) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = {1, 1, 1, 1, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = {1, 1, 1, 1, 5, 6, 7, 8};
 
   std::fill_n(begin(v), 4, 1);
 
@@ -56,8 +58,8 @@ TEST_F(FillNAlgorithm, TestStd2FillN) {
 }
 
 TEST_F(FillNAlgorithm, TestStd3FillN) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = v;
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = v;
 
   int negative_count = -v.size();
   std::fill_n(begin(v), negative_count, 1);
@@ -66,8 +68,8 @@ TEST_F(FillNAlgorithm, TestStd3FillN) {
 }
 
 TEST_F(FillNAlgorithm, TestSyclFillN) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = {1, 1, 1, 1, 1, 1, 1, 1};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class FillNAlgorithm> snp(q);
@@ -77,8 +79,8 @@ TEST_F(FillNAlgorithm, TestSyclFillN) {
 }
 
 TEST_F(FillNAlgorithm, TestSycl2FillN) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = {1, 1, 1, 1, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = {1, 1, 1, 1, 5, 6, 7, 8};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class FillN2Algorithm> snp(q);
@@ -88,8 +90,8 @@ TEST_F(FillNAlgorithm, TestSycl2FillN) {
 }
 
 TEST_F(FillNAlgorithm, TestSycl3FillN) {
-  std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> result = v;
+  sycl::helpers::usm_vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> result = v;
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class FillN3Algorithm> snp(q);

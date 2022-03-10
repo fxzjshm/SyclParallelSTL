@@ -34,6 +34,8 @@
 #include <experimental/algorithm>
 #include <sycl/execution_policy>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 namespace parallel = std::experimental::parallel;
 
 class CountAlgorithm : public testing::Test {
@@ -41,7 +43,7 @@ class CountAlgorithm : public testing::Test {
 };
 
 TEST_F(CountAlgorithm, TestSyclCount) {
-  std::vector<int> v;
+  sycl::helpers::usm_vector<int> v;
   int n_elems = 128;
 
   for (int i = 0; i < n_elems; i++) {

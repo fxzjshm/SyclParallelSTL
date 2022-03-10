@@ -35,6 +35,8 @@
 #include <experimental/algorithm>
 #include <sycl/execution_policy>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 namespace parallel = std::experimental::parallel;
 
 class MismatchAlgorithm : public testing::Test {
@@ -42,7 +44,7 @@ class MismatchAlgorithm : public testing::Test {
 };
 
 TEST_F(MismatchAlgorithm, TestMismatchEqual) {
-  std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
 
   auto expected = std::mismatch(begin(v), end(v), begin(v));
 
@@ -54,8 +56,8 @@ TEST_F(MismatchAlgorithm, TestMismatchEqual) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchMatchCustomPredicate) {
-  std::vector<int> v1{0, 1, 2, 3, 4, 5, 6, 7};
-  std::vector<int> v2{1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> v1{0, 1, 2, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v2{1, 2, 3, 4, 5, 6, 7, 8};
 
   auto expected =
       std::mismatch(begin(v1), end(v1), begin(v2), std::less<int>{});
@@ -69,8 +71,8 @@ TEST_F(MismatchAlgorithm, TestMismatchMatchCustomPredicate) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchNotEqualCustomPredicate) {
-  std::vector<int> v1{0, 1, 2, 9, 4, 5, 6, 7};
-  std::vector<int> v2{1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> v1{0, 1, 2, 9, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v2{1, 2, 3, 4, 5, 6, 7, 8};
 
   auto expected =
       std::mismatch(begin(v1), end(v1), begin(v2), std::less<int>{});
@@ -84,7 +86,7 @@ TEST_F(MismatchAlgorithm, TestMismatchNotEqualCustomPredicate) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchEqualOneRange) {
-  std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
 
   auto expected = std::mismatch(begin(v), end(v), begin(v));
 
@@ -96,8 +98,8 @@ TEST_F(MismatchAlgorithm, TestMismatchEqualOneRange) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchMatchOneRangeCustomPredicate) {
-  std::vector<int> v1{0, 1, 2, 3, 4, 5, 6, 7};
-  std::vector<int> v2{1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> v1{0, 1, 2, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v2{1, 2, 3, 4, 5, 6, 7, 8};
 
   auto expected =
       std::mismatch(begin(v1), end(v1), begin(v2), std::less<int>{});
@@ -112,8 +114,8 @@ TEST_F(MismatchAlgorithm, TestMismatchMatchOneRangeCustomPredicate) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchNoMatchOneRangeCustomPredicate) {
-  std::vector<int> v1{0, 1, 9, 3, 4, 5, 6, 7};
-  std::vector<int> v2{1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> v1{0, 1, 9, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v2{1, 2, 3, 4, 5, 6, 7, 8};
 
   auto expected =
       std::mismatch(begin(v1), end(v1), begin(v2), std::less<int>{});
@@ -128,7 +130,7 @@ TEST_F(MismatchAlgorithm, TestMismatchNoMatchOneRangeCustomPredicate) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchMatchOneRangeNoPredicate) {
-  std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
 
   auto expected = std::mismatch(begin(v), end(v), begin(v));
 
@@ -139,7 +141,7 @@ TEST_F(MismatchAlgorithm, TestMismatchMatchOneRangeNoPredicate) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchEqualNoPredicate) {
-  std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
 
   auto expected = std::mismatch(begin(v), end(v), begin(v));
 
@@ -150,7 +152,7 @@ TEST_F(MismatchAlgorithm, TestMismatchEqualNoPredicate) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchEqualFirstSmaller) {
-  std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
 
   auto expected = std::mismatch(begin(v), end(v) - 2, begin(v));
 
@@ -162,11 +164,10 @@ TEST_F(MismatchAlgorithm, TestMismatchEqualFirstSmaller) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchEqualSecondSmaller) {
-  std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
 
   auto expected = std::mismatch(begin(v), end(v) - 2, begin(v));
-  using std::swap;
-  swap(std::get<0>(expected), std::get<1>(expected));
+  std::swap(std::get<0>(expected), std::get<1>(expected));
 
   sycl::sycl_execution_policy<class MismatchAlgorithmEqualSecondSmaller> snp{};
   auto actual = parallel::mismatch(snp, begin(v), end(v), begin(v), end(v) - 2,
@@ -176,8 +177,8 @@ TEST_F(MismatchAlgorithm, TestMismatchEqualSecondSmaller) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchNotEqual) {
-  std::vector<int> v1{0, 1, 2, 3, 4, 5, 6, 7};
-  std::vector<int> v2{0, 1, 2, 3, 6, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v1{0, 1, 2, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v2{0, 1, 2, 3, 6, 5, 6, 7};
 
   auto expected = std::mismatch(begin(v1), end(v1), begin(v2));
 
@@ -189,8 +190,8 @@ TEST_F(MismatchAlgorithm, TestMismatchNotEqual) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchNotEqualNoPredicate) {
-  std::vector<int> v1{0, 1, 2, 3, 4, 5, 6, 7};
-  std::vector<int> v2{0, 1, 2, 3, 6, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v1{0, 1, 2, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v2{0, 1, 2, 3, 6, 5, 6, 7};
 
   auto expected = std::mismatch(begin(v1), end(v1), begin(v2));
 
@@ -201,7 +202,7 @@ TEST_F(MismatchAlgorithm, TestMismatchNotEqualNoPredicate) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchFirstEmpty) {
-  std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
 
   auto expected = std::mismatch(begin(v), begin(v), begin(v));
 
@@ -213,11 +214,10 @@ TEST_F(MismatchAlgorithm, TestMismatchFirstEmpty) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchSecondEmpty) {
-  std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
 
   auto expected = std::mismatch(begin(v), begin(v), begin(v));
-  using std::swap;
-  swap(std::get<0>(expected), std::get<1>(expected));
+  std::swap(std::get<0>(expected), std::get<1>(expected));
 
   sycl::sycl_execution_policy<class MismatchAlgorithmSecondEmpty> snp{};
   auto actual = parallel::mismatch(snp, begin(v), end(v), begin(v), begin(v),
@@ -227,7 +227,7 @@ TEST_F(MismatchAlgorithm, TestMismatchSecondEmpty) {
 }
 
 TEST_F(MismatchAlgorithm, TestMismatchBothEmpty) {
-  std::vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
+  sycl::helpers::usm_vector<int> v{0, 1, 2, 3, 4, 5, 6, 7};
 
   auto expected = std::mismatch(begin(v), begin(v), begin(v));
 

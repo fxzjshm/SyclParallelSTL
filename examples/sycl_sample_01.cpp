@@ -64,7 +64,8 @@ int main() {
   sycl::sycl_execution_policy<> sycl_policy;
 
   {
-    cl::sycl::buffer<int> b(v.data(), cl::sycl::range<1>(v.size()));
+    //cl::sycl::buffer<int> b(v.data(), cl::sycl::range<1>(v.size()));
+    auto b = v;
   
     sort(sycl_policy, begin(b), end(b));
 

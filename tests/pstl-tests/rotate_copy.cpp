@@ -35,6 +35,8 @@
 #include <experimental/algorithm>
 #include <sycl/execution_policy>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 namespace parallel = std::experimental::parallel;
 
 struct RotateCopyAlgorithm : public testing::Test {};
@@ -54,29 +56,29 @@ void test_rotate_copy(ExecutionPolicy &sep, C1 &in, C2 &out, ForwardIt middle) {
 TEST_F(RotateCopyAlgorithm, TestSyclRotateCopy0) {
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class RotateCopyAlgorithm0> sep(q);
-  std::vector<int> in(0), out(in.size());
+  sycl::helpers::usm_vector<int> in(0), out(in.size());
   test_rotate_copy(sep, in, out, begin(in));
 }
 
 TEST_F(RotateCopyAlgorithm, TestSyclRotateCopy1) {
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class RotateCopyAlgorithm1> sep(q);
-  std::vector<int> in{42}, out(in.size());
+  sycl::helpers::usm_vector<int> in{42}, out(in.size());
   test_rotate_copy(sep, in, out, begin(in));
 }
 
 TEST_F(RotateCopyAlgorithm, TestSyclRotateCopy8) {
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class RotateCopyAlgorithm8> sep(q);
-  std::vector<int>  in{1, 2, 3, 4, 5, 6, 7, 8};
-  std::array<int,8> out;
+  sycl::helpers::usm_vector<int>  in{1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> out(in);
   test_rotate_copy(sep, in, out, std::next(begin(in)));
 }
 
 TEST_F(RotateCopyAlgorithm, TestSyclRotateCopy9) {
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class RotateCopyAlgorithm9> sep(q);
-  std::vector<int> in{1, 2, 3, 4, 5, 6, 7, 8, 9}, out(in.size());
+  sycl::helpers::usm_vector<int> in{1, 2, 3, 4, 5, 6, 7, 8, 9}, out(in.size());
   test_rotate_copy(sep, in, out, std::next(begin(in),0));
   test_rotate_copy(sep, in, out, std::next(begin(in),4));
   test_rotate_copy(sep, in, out, std::next(begin(in),8));

@@ -32,13 +32,15 @@
 #include <sycl/execution_policy>
 #include <experimental/algorithm>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 using namespace std::experimental::parallel;
 
 struct ForEachAlgorithm : public testing::Test {};
 
 TEST_F(ForEachAlgorithm, TestStdForEach) {
-  std::vector<int> v = {2, 1, 3};
-  std::vector<int> result = {3, 2, 4};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3};
+  sycl::helpers::usm_vector<int> result = {3, 2, 4};
 
   std::transform(v.begin(), v.end(), v.begin(),
                  [=](int val) { return val + 1; });
@@ -47,8 +49,8 @@ TEST_F(ForEachAlgorithm, TestStdForEach) {
 }
 
 TEST_F(ForEachAlgorithm, TestSyclForEach) {
-  std::vector<int> v = {2, 1, 3};
-  std::vector<int> result = {3, 2, 4};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3};
+  sycl::helpers::usm_vector<int> result = {3, 2, 4};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class ForEachAlgorithm> snp(q);

@@ -34,13 +34,15 @@
 #include <sycl/execution_policy>
 #include <experimental/algorithm>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 using namespace std::experimental::parallel;
 
 struct TransformAlgorithm : public testing::Test {};
 
 TEST_F(TransformAlgorithm, TestStdTransform) {
-  std::vector<int> v = {2, 1, 3};
-  std::vector<int> result = {3, 2, 4};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3};
+  sycl::helpers::usm_vector<int> result = {3, 2, 4};
 
   std::transform(v.begin(), v.end(), v.begin(),
                  [=](int val) { return val + 1; });
@@ -49,9 +51,9 @@ TEST_F(TransformAlgorithm, TestStdTransform) {
 }
 
 TEST_F(TransformAlgorithm, TestSyclTransform) {
-  std::vector<int> v = {2, 1, 3};
-  std::vector<int> o = {2, 1, 3};
-  std::vector<int> result = {3, 2, 4};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3};
+  sycl::helpers::usm_vector<int> o = {2, 1, 3};
+  sycl::helpers::usm_vector<int> result = {3, 2, 4};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class TransformAlgorithm> snp(q);
@@ -65,10 +67,10 @@ TEST_F(TransformAlgorithm, TestSyclTransform) {
 }
 
 TEST_F(TransformAlgorithm, TestSycl2Transform) {
-  std::vector<int> v1 = {2, 1, 3, 5, 6};
-  std::vector<int> v2 = {2, 1, 3, 3, 1};
-  std::vector<int> o = {0, 0, 0, 0, 0};
-  std::vector<int> result = {5, 3, 7, 9, 8};
+  sycl::helpers::usm_vector<int> v1 = {2, 1, 3, 5, 6};
+  sycl::helpers::usm_vector<int> v2 = {2, 1, 3, 3, 1};
+  sycl::helpers::usm_vector<int> o = {0, 0, 0, 0, 0};
+  sycl::helpers::usm_vector<int> result = {5, 3, 7, 9, 8};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class TransformAlgorithm3> snp(q);
@@ -79,9 +81,9 @@ TEST_F(TransformAlgorithm, TestSycl2Transform) {
 }
 
 TEST_F(TransformAlgorithm, TestSycl4Transform) {
-  std::vector<int> v;
-  std::vector<int> res_std;
-  std::vector<int> res_sycl;
+  sycl::helpers::usm_vector<int> v;
+  sycl::helpers::usm_vector<int> res_std;
+  sycl::helpers::usm_vector<int> res_sycl;
   int n = 4096;
 
   for (int i = 0; i < n; i++) {

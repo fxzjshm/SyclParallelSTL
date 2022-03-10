@@ -33,14 +33,16 @@
 #include <experimental/algorithm>
 #include <sycl/execution_policy>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 namespace parallel = std::experimental::parallel;
 
 struct ReverseCopyAlgorithm : public testing::Test {};
 
 TEST_F(ReverseCopyAlgorithm, TestSyclReverseCopyEven) {
-  std::vector<int> input = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> output(input.size());
-  std::vector<int> expected(input.size());
+  sycl::helpers::usm_vector<int> input = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> output(input.size());
+  sycl::helpers::usm_vector<int> expected(input.size());
 
   std::reverse_copy(begin(input), end(input), begin(expected));
 
@@ -54,9 +56,9 @@ TEST_F(ReverseCopyAlgorithm, TestSyclReverseCopyEven) {
 }
 
 TEST_F(ReverseCopyAlgorithm, TestSyclReverseCopyOdd) {
-  std::vector<int> input = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-  std::vector<int> output(input.size());
-  std::vector<int> expected(input.size());
+  sycl::helpers::usm_vector<int> input = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+  sycl::helpers::usm_vector<int> output(input.size());
+  sycl::helpers::usm_vector<int> expected(input.size());
 
   std::reverse_copy(begin(input), end(input), begin(expected));
 

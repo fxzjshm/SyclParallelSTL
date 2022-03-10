@@ -33,13 +33,15 @@
 #include <experimental/algorithm>
 #include <sycl/execution_policy>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 namespace parallel = std::experimental::parallel;
 
 struct ReplaceIfAlgorithm : public testing::Test {};
 
 TEST_F(ReplaceIfAlgorithm, TestSyclReplaceIf) {
-  std::vector<int> input = {1, 2, 3, 4, 5, 6, 7, 8};
-  std::vector<int> expected(input.size());
+  sycl::helpers::usm_vector<int> input = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> expected(input.size());
 
   std::replace_copy_if(begin(input), end(input), begin(expected),
                        [](int a) { return a % 2 == 0; }, 10);

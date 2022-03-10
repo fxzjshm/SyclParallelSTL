@@ -34,12 +34,14 @@
 #include <experimental/algorithm>
 #include <sycl/execution_policy>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 namespace parallel = std::experimental::parallel;
 
 struct AnyOfAlgorithm : public testing::Test {};
 
 TEST_F(AnyOfAlgorithm, TestSyclAnyOfTrue) {
-  std::vector<int> input = {1, 2, 3, 4, 5, 6, 7, 8};
+  sycl::helpers::usm_vector<int> input = {1, 2, 3, 4, 5, 6, 7, 8};
 
   sycl::sycl_execution_policy<class AnyOfAlgorithmFalse> snp;
   auto result = parallel::any_of(snp, begin(input), end(input),
@@ -49,7 +51,7 @@ TEST_F(AnyOfAlgorithm, TestSyclAnyOfTrue) {
 }
 
 TEST_F(AnyOfAlgorithm, TestSyclAnyOfFalse) {
-  std::vector<int> input = {2, 4, 6, 8, 10, 12, 14, 16};
+  sycl::helpers::usm_vector<int> input = {2, 4, 6, 8, 10, 12, 14, 16};
 
   sycl::sycl_execution_policy<class AnyOfAlgorithmTrue> snp;
   auto result = parallel::any_of(snp, begin(input), end(input),
@@ -59,7 +61,7 @@ TEST_F(AnyOfAlgorithm, TestSyclAnyOfFalse) {
 }
 
 TEST_F(AnyOfAlgorithm, TestSyclAnyOfEmpty) {
-  std::vector<int> input{};
+  sycl::helpers::usm_vector<int> input{};
 
   sycl::sycl_execution_policy<class AnyOfAlgorithmEmpty> snp;
   auto result = parallel::any_of(snp, begin(input), end(input),

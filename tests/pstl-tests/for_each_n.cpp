@@ -32,13 +32,15 @@
 #include <sycl/execution_policy>
 #include <experimental/algorithm>
 
+#include <sycl/helpers/sycl_usm_vector.hpp>
+
 struct ForEachNAlgorithm : public testing::Test {};
 
 using namespace std::experimental::parallel;
 
 TEST_F(ForEachNAlgorithm, TestStdForEachN) {
-  std::vector<int> v = {2, 1, 3, 4, 8};
-  std::vector<int> result = {3, 2, 4, 5, 9};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 4, 8};
+  sycl::helpers::usm_vector<int> result = {3, 2, 4, 5, 9};
 
   std::for_each_n(v.begin(), v.size(), [=](int &val) { val--; });
 
@@ -55,8 +57,8 @@ TEST_F(ForEachNAlgorithm, TestStdForEachN) {
 }
 
 TEST_F(ForEachNAlgorithm, TestStd2ForEachN) {
-  std::vector<int> v = {2, 1, 3, 4, 8};
-  std::vector<int> result = {3, 2, 4, 5, 9};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 4, 8};
+  sycl::helpers::usm_vector<int> result = {3, 2, 4, 5, 9};
 
   auto iterator1 = std::for_each_n(v.begin(), v.size(), [=](int &val) { val--; });
 
@@ -66,8 +68,8 @@ TEST_F(ForEachNAlgorithm, TestStd2ForEachN) {
 }
 
 TEST_F(ForEachNAlgorithm, TestStd3ForEachN) {
-  std::vector<int> v = {2, 1, 3, 4, 8};
-  std::vector<int> result = {3, 2, 4, 5, 9};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 4, 8};
+  sycl::helpers::usm_vector<int> result = {3, 2, 4, 5, 9};
 
   int minus_size = -v.size();
   auto iterator1 = std::for_each_n(v.begin(), minus_size, [=](int &val) { val++; });
@@ -76,8 +78,8 @@ TEST_F(ForEachNAlgorithm, TestStd3ForEachN) {
 }
 
 TEST_F(ForEachNAlgorithm, TestSyclForEachN) {
-  std::vector<int> v = {2, 1, 3, 4, 8};
-  std::vector<int> result = {3, 2, 4, 5, 7};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 4, 8};
+  sycl::helpers::usm_vector<int> result = {3, 2, 4, 5, 7};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class ForEachNAlgorithm> snp(q);
@@ -100,7 +102,7 @@ TEST_F(ForEachNAlgorithm, TestSyclForEachN) {
 }
 
 TEST_F(ForEachNAlgorithm, TestSycl2ForEachN) {
-  std::array<int, 5> v = {2, 1, 3, 4, 8};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 4, 8};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class ForEachN2Algorithm> snp(q);
@@ -117,8 +119,8 @@ TEST_F(ForEachNAlgorithm, TestSycl2ForEachN) {
 }
 
 TEST_F(ForEachNAlgorithm, TestSycl3ForEachN) {
-  std::vector<int> v = {2, 1, 3, 4, 8};
-  std::vector<int> result = {3, 2, 4, 5, 9};
+  sycl::helpers::usm_vector<int> v = {2, 1, 3, 4, 8};
+  sycl::helpers::usm_vector<int> result = {3, 2, 4, 5, 9};
 
   cl::sycl::queue q;
   sycl::sycl_execution_policy<class ForEachN3Algorithm> snp(q);
