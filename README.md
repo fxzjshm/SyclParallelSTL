@@ -1,7 +1,11 @@
-Changes of this fork: [![CircleCI](https://circleci.com/gh/fxzjshm/SyclParallelSTL/tree/master.svg?style=svg)](https://circleci.com/gh/fxzjshm/SyclParallelSTL/tree/master)
-* important modifications:
-    * functions will not make buffer from inputs and outputs; instead, they operate directly on input/output iterators, so a usm_allocator or something similar is required if running on hetegorous platforms. (see commit 5913425, c6546c9, 1394ca9)
-* added functions:
+[![CircleCI](https://circleci.com/gh/fxzjshm/SyclParallelSTL/tree/master.svg?style=svg)](https://circleci.com/gh/fxzjshm/SyclParallelSTL/tree/master)
+
+Changes of this fork: 
+* Important modifications:
+    * Functions will not make buffer from inputs and outputs; instead, they operate directly on input/output iterators, so a usm_allocator or something similar is required if running on heterogeneous platforms.
+        * Changes are in commit 5913425(others), c6546c9(reduce_by_key) and 1394ca9(sort). Revert them if you rely on old behaviour.
+        * Possible usage are shown in commit 57922d9(update tests)
+* Added functions:
     * copy_if
     * transform_if
     * adjacent_difference
@@ -10,7 +14,7 @@ Changes of this fork: [![CircleCI](https://circleci.com/gh/fxzjshm/SyclParallelS
     * iota
     * reduce_by_key
     * sort_by_key
-* modified functions:
+* Modified functions:
     * sort:
         * use merge_sort_on_gpu learned from Boost.Compute when size != 2^n
         * negate meaning of Comp so it's in tune with STL
