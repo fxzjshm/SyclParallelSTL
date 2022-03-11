@@ -237,7 +237,7 @@ inline void merge_blocks_on_gpu(ExecutionPolicy &exec,
             output[offset] = my_key;
         });
     };
-    exec.get_queue().submit(f);
+    exec.get_queue().submit(f).wait();
 }
 
 // reference: boost/compute/algorithm/detail/merge_sort_on_gpu.hpp
@@ -348,7 +348,7 @@ void bitonic_sort(cl::sycl::queue q, InputIterator input,
               a[rightId] = sortIncreasing ? greater : lesser;
             });
       };  // command group functor
-      q.submit(f);
+      q.submit(f).wait();
     }  // passStage
   }    // stage
 }  // bitonic_sort
