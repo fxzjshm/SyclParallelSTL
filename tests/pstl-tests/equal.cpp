@@ -51,6 +51,18 @@ TEST_F(EqualAlgorithm, EqualTrue) {
   EXPECT_TRUE(result);
 }
 
+TEST_F(EqualAlgorithm, EqualTrueLong) {
+  sycl::helpers::usm_vector<int> input(1<<25);
+  std::generate(input.begin(), input.end(), std::rand);
+
+  sycl::sycl_execution_policy<class EqualAlgorithmTrueLong> snp;
+  auto result =
+      parallel::equal(snp, begin(input), end(input), begin(input),
+                      end(input), [](int a, int b) { return a == b; });
+
+  EXPECT_TRUE(result);
+}
+
 TEST_F(EqualAlgorithm, EqualTrueJustBegin) {
   sycl::helpers::usm_vector<int> input = {2, 4, 6, 8, 10, 12, 14, 16};
 

@@ -342,7 +342,7 @@ B buffer_map2reduce(ExecutionPolicy &snp,
           for (size_t read = local_pos + d.nb_work_item;
                read < group_end;
                read += d.nb_work_item) {
-            acc = reduce(acc, map(read, input1[read], input2[local_pos]));
+            acc = reduce(acc, map(read, input1[read], input2[read]));
           }
           sum[local_id] = acc;
         }

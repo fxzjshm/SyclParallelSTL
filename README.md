@@ -21,6 +21,7 @@ Changes of this fork:
     * buffer_algorithms:
         * compute_mapreduce_descriptor: restrict work item counts in case `sycl::info::device::max_work_item_sizes` is enormous
         * fix misuse of `cgh.parallel_for_work_group()`
+        * fix a mistake in `buffer_map2reduce`
 ------
 
 
