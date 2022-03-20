@@ -20,8 +20,10 @@ Changes of this fork:
         * negate meaning of Comp so it's in tune with STL
     * buffer_algorithms:
         * compute_mapreduce_descriptor: restrict work item counts in case `sycl::info::device::max_work_item_sizes` is enormous
-        * fix misuse of `cgh.parallel_for_work_group()`
-        * fix a mistake in `buffer_map2reduce`
+        * ~~fix misuse of `cgh.parallel_for_work_group()`~~ replaced hierarchical parallelism with `parallel_for(nd_range, ...)`
+        * fix a mistake of index in `buffer_map2reduce`
+* Known issues:
+    * `buffer_mapscan` sometimes gives incorrect result on hip but never on CPU, this is still under investigation. (see commented test in tests/pstl-tests/copy_if.cpp)
 ------
 
 
