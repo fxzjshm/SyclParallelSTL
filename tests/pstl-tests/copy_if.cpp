@@ -64,10 +64,8 @@ TEST_F(CopyIfAlgorithm, CopyIfLongWithStencil) {
   auto predicate = [] (auto x) { return x < 0.5f; };
 
   std::generate(input.begin(), input.end(), std::rand);
-  for (int i = 0; i < size; i++) {
-    float x = ((float)std::rand()) / RAND_MAX;
-    stencil.push_back(x);
-  }
+  std::generate(stencil.begin(), stencil.end(), 
+                [](){ return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX); });
 
   ::__copy_if(input.begin(), input.end(), stencil.begin(), output1.begin(), predicate);
 
@@ -76,3 +74,21 @@ TEST_F(CopyIfAlgorithm, CopyIfLongWithStencil) {
 
   EXPECT_TRUE(std::equal(output1.begin(), output1.end(), output2.begin()));
 }
+
+/*
+TEST_F(CopyIfAlgorithm, CopyIfLongAllTrue) {
+  const size_t size = 1<<20;
+  sycl::helpers::usm_vector<int> input(size), output(size);
+  auto predicate = [] (auto x) { return true; };
+
+  std::generate(input.begin(), input.end(), std::rand);
+
+  sycl::sycl_execution_policy<class CopyIfLongAllTrue> snp;
+
+  int n = 100;
+  while(n--) {
+    sycl::impl::copy_if(snp, input.begin(), input.end(), output.begin(), predicate);
+    EXPECT_TRUE(std::equal(input.begin(), input.end(), output.begin()));
+  }
+}
+*/

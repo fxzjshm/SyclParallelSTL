@@ -213,13 +213,75 @@ make_const_buffer(Iterator b, Iterator e) {
  * @brief Constructs a read/write sycl buffer given a type and size
  * @param size_t size
  */
-template <class ElemT>
-cl::sycl::buffer<ElemT, 1> make_temp_buffer(size_t size) {
-  cl::sycl::buffer<ElemT, 1> buf((cl::sycl::range<1>(size)));
+template <class ElemT, int Count = 0>
+cl::sycl::buffer<ElemT, 1>& make_temp_buffer(size_t size) {
+  thread_local cl::sycl::buffer<ElemT, 1> buf((cl::sycl::range<1>(size)));
+  if (buf.size() < size) {
+      buf = cl::sycl::buffer<ElemT, 1> { cl::sycl::range<1> { 2 * size } };
+  }
 #ifndef TRISYCL_CL_LANGUAGE_VERSION
   buf.set_final_data(nullptr);
 #endif
   return buf;
+}
+
+/**
+ * @brief Constructs a read/write sycl pointer given a size and an allocation function
+ */
+template <typename AllocFunc, int Order = 0>
+void* make_temp_pointer_impl(size_t alignment, size_t size, cl::sycl::queue& queue, AllocFunc alloc_func) {
+  thread_local size_t current_size = 0;
+  thread_local void* ptr = nullptr;
+
+  if (size > current_size || ptr == nullptr) {
+    void* old_ptr = ptr;
+    size_t new_size = 1.5 * size;
+    void* new_ptr = alloc_func(alignment, new_size, queue);
+    //queue.memcpy(new_ptr, ptr, current_size).wait();
+    current_size = new_size;
+    ptr = new_ptr;
+    if (old_ptr != nullptr) {
+        cl::sycl::free(old_ptr, queue);
+    }
+  }
+  // not sure if this helps
+  queue.prefetch(ptr, current_size).wait();
+
+  return ptr;
+}
+
+/**
+ * @brief Constructs a read/write sycl usm pointer given a size
+ */
+template <int Order = 0>
+void* make_temp_usm_pointer_impl(size_t alignment, size_t size, cl::sycl::queue& queue) {
+  auto alloc_func = [] (auto... args) { return cl::sycl::aligned_alloc_shared(args...); };
+  return make_temp_pointer_impl<decltype(alloc_func), Order>(alignment, size, queue, alloc_func);
+}
+
+/**
+ * @brief Constructs a read/write sycl usm pointer given a type and size
+ */
+template <class ElemT, int Order = 0>
+ElemT* make_temp_usm_pointer(size_t size, cl::sycl::queue& queue) {
+  return static_cast<ElemT*>(make_temp_usm_pointer_impl<Order>(sizeof(ElemT), sizeof(ElemT) * size, queue));
+}
+
+/**
+ * @brief Constructs a read/write sycl device pointer given a size
+ */
+template <int Order = 0>
+void* make_temp_device_pointer_impl(size_t alignment, size_t size, cl::sycl::queue& queue) {
+  auto alloc_func = [] (auto... args) { return cl::sycl::aligned_alloc_device(args...); };
+  return make_temp_pointer_impl<decltype(alloc_func), Order>(alignment, size, queue, alloc_func);
+}
+
+/**
+ * @brief Constructs a read/write sycl device pointer given a type and size
+ */
+template <class ElemT, int Order = 0>
+ElemT* make_temp_device_pointer(size_t size, cl::sycl::queue& queue) {
+  return static_cast<ElemT*>(make_temp_device_pointer_impl<Order>(sizeof(ElemT), sizeof(ElemT) * size, queue));
 }
 
 } /** @} namespace helpers */

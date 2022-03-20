@@ -10,15 +10,6 @@
 namespace sycl {
 namespace impl {
 
-template <typename ExecutionPolicy, typename InputIterator,
-          typename OutputIterator, typename Predicate>
-OutputIterator copy_if(
-    ExecutionPolicy& exec, InputIterator first, InputIterator last,
-    OutputIterator result, Predicate predicate) {
-
-  return ::sycl::impl::copy_if(exec, first, last, first, result, predicate);
-}
-
 template <typename ExecutionPolicy, typename InputIterator1, typename InputIterator2,
           typename OutputIterator, typename Predicate>
 OutputIterator copy_if(
@@ -34,29 +25,27 @@ OutputIterator copy_if(
   auto device = q.get_device();
 
   // reference: boost/compute/algorithm/transform_if.cpp
-  typedef typename sycl::usm_allocator<size_t, sycl::usm::alloc::shared> Alloc;
-  thread_local auto indices = std::vector<size_t, Alloc>(Alloc(q));
-  indices.reserve(count);
-  ::sycl::impl::transform(exec, stencil, stencil + count, indices.begin(),
+  size_t* indices = sycl::helpers::make_temp_usm_pointer<size_t, 1>(count, q);
+  ::sycl::impl::transform(exec, stencil, stencil + count, indices,
     [predicate](auto x){
       return (size_t)((predicate(x)) ? 1 : 0);
   });
 
-  size_t copied_element_count = *(indices.cbegin() + count - 1);
+  size_t copied_element_count = *(indices + count - 1);
   ::sycl::impl::exclusive_scan(
-      exec, indices.begin(), indices.begin() + count, indices.begin(), (size_t)0, std::plus()
+      exec, indices, indices + count, indices, (size_t)0, std::plus()
   );
-  copied_element_count += *(indices.cbegin() + count - 1); // last scan element plus last mask element
+  copied_element_count += *(indices + count - 1); // last scan element plus last mask element
+  assert(copied_element_count <= count);
   if (copied_element_count == 0) {
       return result;
   }
 
   auto vectorSize = count;
   const auto ndRange = exec.calculateNdRange(vectorSize);
-  auto indices_begin = indices.begin();
-  auto transform_if_do_copy = [vectorSize, ndRange, first, indices_begin, stencil, result, predicate, copied_element_count] (cl::sycl::handler &h) {
+  auto transform_if_do_copy = [vectorSize, ndRange, first, indices, stencil, result, predicate, copied_element_count] (cl::sycl::handler &h) {
     auto aI = first;
-    auto aIndices = indices_begin;
+    auto aIndices = indices;
     auto aStencil = stencil;
     auto aO = result;
     h.parallel_for(
@@ -72,6 +61,15 @@ OutputIterator copy_if(
   };
   q.submit(transform_if_do_copy).wait();
   return result + copied_element_count;
+}
+
+template <typename ExecutionPolicy, typename InputIterator,
+          typename OutputIterator, typename Predicate>
+OutputIterator copy_if(
+    ExecutionPolicy& exec, InputIterator first, InputIterator last,
+    OutputIterator result, Predicate predicate) {
+
+  return ::sycl::impl::copy_if(exec, first, last, first, result, predicate);
 }
 
 }  // namespace impl

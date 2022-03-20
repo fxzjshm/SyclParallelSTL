@@ -4,26 +4,29 @@
 #include <algorithm>
 #include <vector>
 
+#include <sycl/algorithm/copy.hpp>
 #include <sycl/algorithm/rotate_copy.hpp>
 
 namespace sycl {
 namespace impl {
 
-/* rotate_copy.
+/* rotate.
  * Implementation of the command group that submits a rotate_copy kernel.
  */
 template <class ExecutionPolicy, class ForwardIt>
 ForwardIt rotate(ExecutionPolicy &sep, ForwardIt first,
                        ForwardIt middle, ForwardIt last) {
     using ValueType = typename std::iterator_traits<ForwardIt>::value_type;
-    typedef cl::sycl::usm_allocator<ValueType, cl::sycl::usm::alloc::shared> ValueTypeAllocator;
+    if(first == middle) return last;
+    if(middle == last) return first;
     cl::sycl::queue q = sep.get_queue();
-    ValueTypeAllocator value_type_allocator(sep.get_queue());
-    const auto n = std::distance(first, last);
-    std::vector<ValueType, ValueTypeAllocator> output_values(n, value_type_allocator);
-    ::sycl::impl::rotate_copy(sep, first, middle, last, output_values.begin());
-    q.wait();
-    std::copy(output_values.begin(), output_values.end(), first);
+    const auto n = sycl::helpers::distance(first, last);
+    if (n == 0) [[unlikely]] {
+        return first;
+    }
+    ValueType* output_values = sycl::helpers::make_temp_device_pointer<ValueType, 0>(n, q);
+    ::sycl::impl::rotate_copy(sep, first, middle, last, output_values);
+    ::sycl::impl::copy(sep, output_values, output_values + n, first);
     return first + (last - middle);
 }
 

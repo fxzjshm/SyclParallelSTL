@@ -14,14 +14,6 @@
 namespace sycl {
 namespace impl {
 
-template <typename ExecutionPolicy, typename InputIterator,
-          typename OutputIterator, typename UnaryFunction, typename Predicate>
-OutputIterator transform_if(
-    ExecutionPolicy& exec, InputIterator first, InputIterator last,
-    OutputIterator result, UnaryFunction function, Predicate predicate) {
-  return ::sycl::impl::transform_if(exec, first, last, first, result, function, predicate);
-}
-
 // NOTICE: transform_if in Thrust will not modify output if stencil == false,
 //   while transform_if in Boost.Compute seems to delete all stencil == false values in output.
 // here the former one is chosen, the later should now be accomplished by a copy_if + transform
@@ -74,27 +66,26 @@ OutputIterator transform_if(
   auto device = q.get_device();
 
   // reference: boost/compute/algorithm/transform_if.cpp
-  auto indices = sycl::helpers::device_vector<size_t>(count, sycl::usm_allocator(q));
-  ::sycl::impl::transform(exec, stencil, stencil + count, indices.begin(),
+  size_t* indices = sycl::helpers::make_temp_usm_pointer<size_t>(count, q);
+  ::sycl::impl::transform(exec, stencil, stencil + count, indices,
     [predicate](auto x){
       return (size_t)((predicate(x)) ? 1 : 0);
   });
 
-  size_t copied_element_count = *(indices.cend() - 1);
+  size_t copied_element_count = *(indices + count - 1);
   ::sycl::impl::exclusive_scan(
-      exec, indices.begin(), indices.end(), indices.begin(), (size_t)0, std::plus()
+      exec, indices, indices + n, indices, (size_t)0, std::plus()
   );
-  copied_element_count += *(indices.cend() - 1); // last scan element plus last mask element
+  copied_element_count += *(indices + count - 1); // last scan element plus last mask element
   if (copied_element_count == 0) {
       return result;
   }
 
   auto vectorSize = count;
   const auto ndRange = exec.calculateNdRange(vectorSize);
-  auto indices_begin = indices.begin();
-  auto transform_if_do_copy = [vectorSize, ndRange, first, indices_begin, stencil, result, predicate, function, copied_element_count] (cl::sycl::handler &h) {
+  auto transform_if_do_copy = [vectorSize, ndRange, first, indices, stencil, result, predicate, function, copied_element_count] (cl::sycl::handler &h) {
     auto aI = first;
-    auto aIndices = indices_begin;
+    auto aIndices = indices;
     auto aStencil = stencil;
     auto aO = result;
     h.parallel_for(
@@ -113,6 +104,14 @@ OutputIterator transform_if(
 }
 
 #endif // different understanding of transform_if
+
+template <typename ExecutionPolicy, typename InputIterator,
+          typename OutputIterator, typename UnaryFunction, typename Predicate>
+OutputIterator transform_if(
+    ExecutionPolicy& exec, InputIterator first, InputIterator last,
+    OutputIterator result, UnaryFunction function, Predicate predicate) {
+  return ::sycl::impl::transform_if(exec, first, last, first, result, function, predicate);
+}
 
 }  // namespace impl
 }  // namespace sycl

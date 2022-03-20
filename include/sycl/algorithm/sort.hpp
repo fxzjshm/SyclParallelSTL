@@ -254,30 +254,27 @@ inline void merge_sort_on_gpu(ExecutionPolicy &exec,
         return;
     }
 
+    cl::sycl::queue queue = exec.get_queue();
     size_t block_size = 1;
 
     bool result_in_temporary_buffer = false;
-    typedef cl::sycl::usm_allocator<key_type, cl::sycl::usm::alloc::shared> KeyTypeAllocator;
-    KeyTypeAllocator key_type_allocator(exec.get_queue());
-    thread_local std::vector<key_type, KeyTypeAllocator> temp_keys(key_type_allocator);
-    temp_keys.reserve(count);
+    key_type* temp_keys = sycl::helpers::make_temp_device_pointer<key_type>(count, queue);
 
     for(; block_size < count; block_size *= 2) {
         result_in_temporary_buffer = !result_in_temporary_buffer;
         if(result_in_temporary_buffer) {
-            merge_blocks_on_gpu(exec, first, temp_keys.begin(),
+            merge_blocks_on_gpu(exec, first, temp_keys,
                                 compare, count, block_size);
         } else {
-            merge_blocks_on_gpu(exec, temp_keys.begin(), first,
+            merge_blocks_on_gpu(exec, temp_keys, first,
                                 compare, count, block_size);
         }
     }
 
     if(result_in_temporary_buffer) {
-        // not using temp_keys.end() as resize() construct/destructs elements, which isn't needed
-        ::sycl::impl::copy(exec, temp_keys.begin(), temp_keys.begin() + count, first);
+        ::sycl::impl::copy(exec, temp_keys, temp_keys + count, first);
     }
-    exec.get_queue().wait();
+    queue.wait();
 }
 
 /* bitonic_sort.
