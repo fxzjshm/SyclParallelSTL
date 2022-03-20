@@ -235,7 +235,7 @@ void* make_temp_pointer_impl(size_t alignment, size_t size, cl::sycl::queue& que
 
   if (size > current_size || ptr == nullptr) {
     void* old_ptr = ptr;
-    size_t new_size = 1.5 * size;
+    size_t new_size = 1.5 * size + 1;
     void* new_ptr = alloc_func(alignment, new_size, queue);
     //queue.memcpy(new_ptr, ptr, current_size).wait();
     current_size = new_size;
@@ -244,8 +244,6 @@ void* make_temp_pointer_impl(size_t alignment, size_t size, cl::sycl::queue& que
         cl::sycl::free(old_ptr, queue);
     }
   }
-  // not sure if this helps
-  queue.prefetch(ptr, current_size).wait();
 
   return ptr;
 }
@@ -256,7 +254,14 @@ void* make_temp_pointer_impl(size_t alignment, size_t size, cl::sycl::queue& que
 template <int Order = 0>
 void* make_temp_usm_pointer_impl(size_t alignment, size_t size, cl::sycl::queue& queue) {
   auto alloc_func = [] (auto... args) { return cl::sycl::aligned_alloc_shared(args...); };
-  return make_temp_pointer_impl<decltype(alloc_func), Order>(alignment, size, queue, alloc_func);
+  void* ptr = make_temp_pointer_impl<decltype(alloc_func), Order>(alignment, size, queue, alloc_func);
+
+  // not sure if this helps
+  if (ptr != nullptr && size > 0) [[likely]] {
+    queue.prefetch(ptr, size).wait();
+  }
+
+  return ptr;
 }
 
 /**
