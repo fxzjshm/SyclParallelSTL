@@ -236,7 +236,11 @@ void* make_temp_pointer_impl(size_t alignment, size_t size, cl::sycl::queue& que
   if (size > current_size || ptr == nullptr) {
     void* old_ptr = ptr;
     size_t new_size = 1.5 * size + 1;
+    if (alignment != 0) {
+      new_size = (new_size / alignment + 1) * alignment;
+    }
     void* new_ptr = alloc_func(alignment, new_size, queue);
+    assert(new_ptr != nullptr);
     //queue.memcpy(new_ptr, ptr, current_size).wait();
     current_size = new_size;
     ptr = new_ptr;
@@ -258,7 +262,7 @@ void* make_temp_usm_pointer_impl(size_t alignment, size_t size, cl::sycl::queue&
 
   // not sure if this helps
   if (ptr != nullptr && size > 0) [[likely]] {
-    queue.prefetch(ptr, size).wait();
+    queue.prefetch(ptr, size); //.wait();
   }
 
   return ptr;
@@ -287,6 +291,18 @@ void* make_temp_device_pointer_impl(size_t alignment, size_t size, cl::sycl::que
 template <class ElemT, int Order = 0>
 ElemT* make_temp_device_pointer(size_t size, cl::sycl::queue& queue) {
   return static_cast<ElemT*>(make_temp_device_pointer_impl<Order>(sizeof(ElemT), sizeof(ElemT) * size, queue));
+}
+
+template<typename T>
+inline T read_device_pointer(const T* ptr, cl::sycl::queue& q) {
+  T tmp;
+  q.copy(ptr, &tmp, 1).wait();
+  return tmp;
+}
+
+template<typename T>
+inline void write_device_pointer(T* ptr, const T val, cl::sycl::queue& q) {
+  q.copy(&val, ptr, 1).wait();
 }
 
 } /** @} namespace helpers */

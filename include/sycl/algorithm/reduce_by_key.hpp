@@ -76,20 +76,18 @@ std::pair<OutputIterator1, OutputIterator2>
     InputIterator2 values_last = values_first + n;
     
     // compute head flags
-    FlagType* head_flags = sycl::helpers::make_temp_usm_pointer<FlagType, 0>(n, queue);
+    FlagType* head_flags = sycl::helpers::make_temp_device_pointer<FlagType, 1>(n, queue);
     sycl::impl::transform(exec, keys_first, keys_last - 1, keys_first + 1, head_flags + 1, std::not_fn(binary_pred));
-    head_flags[0] = 1;
-    queue.prefetch(head_flags, sizeof(FlagType) * n);
+    sycl::helpers::write_device_pointer(head_flags + 0, static_cast<FlagType>(1), queue); // head_flags[0] = 1;
 
     // compute tail flags
-    FlagType* tail_flags = sycl::helpers::make_temp_usm_pointer<FlagType, 1>(n, queue); //COPY INSTEAD OF TRANSFORM
+    FlagType* tail_flags = sycl::helpers::make_temp_device_pointer<FlagType, 2>(n, queue); //COPY INSTEAD OF TRANSFORM
     sycl::impl::transform(exec, keys_first, keys_last - 1, keys_first + 1, tail_flags, std::not_fn(binary_pred));
-    tail_flags[n-1] = 1;
-    queue.prefetch(tail_flags, sizeof(FlagType) * n);
+    sycl::helpers::write_device_pointer(tail_flags + (n - 1), static_cast<FlagType>(1), queue); // tail_flags[n-1] = 1;
 
     // scan the values by flag
     ValueType* scanned_values = sycl::helpers::make_temp_device_pointer<ValueType, 0>(n, queue);
-    FlagType* scanned_tail_flags = sycl::helpers::make_temp_usm_pointer<FlagType, 2>(n, queue);
+    FlagType* scanned_tail_flags = sycl::helpers::make_temp_device_pointer<FlagType, 3>(n, queue);
     
     sycl::impl::inclusive_scan
         (exec,
@@ -102,7 +100,7 @@ std::pair<OutputIterator1, OutputIterator2>
     sycl::impl::exclusive_scan(exec, tail_flags, tail_flags + n, scanned_tail_flags, FlagType(0), std::plus<FlagType>());
 
     // number of unique keys
-    FlagType N = scanned_tail_flags[n - 1] + 1;
+    FlagType N = sycl::helpers::read_device_pointer(scanned_tail_flags + (n - 1), queue) + 1;// scanned_tail_flags[n - 1] + 1;
     
     // scatter the keys and accumulated values    
     sycl::impl::scatter_if(exec, keys_first,     keys_last,          scanned_tail_flags, head_flags, keys_output);

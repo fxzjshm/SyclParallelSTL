@@ -25,17 +25,17 @@ OutputIterator copy_if(
   auto device = q.get_device();
 
   // reference: boost/compute/algorithm/transform_if.cpp
-  size_t* indices = sycl::helpers::make_temp_usm_pointer<size_t, 1>(count, q);
+  size_t* indices = sycl::helpers::make_temp_device_pointer<size_t, 0>(count, q);
   ::sycl::impl::transform(exec, stencil, stencil + count, indices,
     [predicate](auto x){
       return (size_t)((predicate(x)) ? 1 : 0);
   });
 
-  size_t copied_element_count = *(indices + count - 1);
+  size_t copied_element_count = sycl::helpers::read_device_pointer(indices + count - 1, q);
   ::sycl::impl::exclusive_scan(
       exec, indices, indices + count, indices, (size_t)0, std::plus()
   );
-  copied_element_count += *(indices + count - 1); // last scan element plus last mask element
+  copied_element_count += sycl::helpers::read_device_pointer(indices + count - 1, q); // last scan element plus last mask element
   assert(copied_element_count <= count);
   if (copied_element_count == 0) {
       return result;

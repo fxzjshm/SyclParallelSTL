@@ -25,6 +25,7 @@ template <typename T,
           cl::sycl::usm::alloc AllocKind = cl::sycl::usm::alloc::shared,
           size_t align = sizeof(T)>
 using usm_vector = std::vector<T, usm_alloc<T, AllocKind, align>>;
+
 }  // namespace helpers
 }  // namespace sycl
 
