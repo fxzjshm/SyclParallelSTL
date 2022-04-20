@@ -8,6 +8,8 @@
 // See LICENCE.md file accompaining this file
 //
 
+// edit: use std::tuple<reference> instead of ZipRef<> compatibility with other implementations.
+
 #pragma once
 
 #include <cstddef>
@@ -106,7 +108,8 @@ public:
   using difference_type   = std::common_type_t<typename std::iterator_traits<IT>::difference_type...>;
   using value_type        = std::tuple<typename std::iterator_traits<IT>::value_type ...>;
   using pointer           = std::tuple<typename std::iterator_traits<IT>::pointer ...>;
-  using reference         = ZipRef<std::remove_reference_t<typename std::iterator_traits<IT>::reference>...>;
+  //using reference         = ZipRef<std::remove_reference_t<typename std::iterator_traits<IT>::reference>...>;
+  using reference         = std::tuple<typename std::iterator_traits<IT>::reference ...>;
 
   ZipIter() = default;
   ZipIter(const ZipIter &rhs) = default;
@@ -121,7 +124,7 @@ public:
   }
   ZipIter& operator-=(const difference_type d) { return operator+=(-d); }
 
-  reference operator* () const {return std::apply([](auto&&...args){return reference(&(*(args))...);}, it);}
+  reference operator* () const {return std::apply([](auto&&...args){return reference(*(args)...);}, it);}
   pointer   operator->() const {return std::apply([](auto&&...args){return pointer  (&(*(args))...);}, it);}
   reference operator[](difference_type rhs) const {return *(operator+(rhs));}
 
