@@ -18,6 +18,8 @@ class device_allocator {
     typedef device_allocator<U, new_align> other;
   };
 
+  using value_type = T;
+
   device_allocator(cl::sycl::queue &queue_) : queue(queue_){};
 
   T *allocate(std::size_t num_elements) {

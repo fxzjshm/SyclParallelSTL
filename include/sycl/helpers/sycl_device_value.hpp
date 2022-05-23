@@ -18,7 +18,7 @@ class device_value {
  public:
   device_value(T* ptr_) : ptr(ptr_) {}
 
-#if defined(__SYCL_DEVICE_ONLY__) || defined(__SYCL_SINGLE_SOURCE__)
+#if defined(__SYCL_DEVICE_ONLY__) || defined(__SYCL_SINGLE_SOURCE__) || defined(__SYCL_PSTL_HOMOGENEOUS_MEMORY__)
   operator const T() const noexcept { return *ptr; }
   device_value<T>& operator=(const T& value) noexcept {
     *ptr = value;
