@@ -88,8 +88,14 @@ sycl_algorithm_descriptor compute_mapreduce_descriptor(cl::sycl::device device,
   size_t max_work_group =
     device.get_info<cl::sycl::info::device::max_compute_units>();
 
-  const cl::sycl::id<3>max_work_item_sizes =
-    device.get_info<cl::sycl::info::device::max_work_item_sizes>();
+  const cl::sycl::id<3> max_work_item_sizes =
+    device.get_info<
+#if defined(__HIPSYCL__)
+      cl::sycl::info::device::max_work_item_sizes
+#else
+      cl::sycl::info::device::max_work_item_sizes<3>
+#endif
+    >();
   const auto max_work_item = min(
     device.get_info<cl::sycl::info::device::max_work_group_size>(),
     max_work_item_sizes[0]);
@@ -360,7 +366,13 @@ sycl_algorithm_descriptor compute_mapscan_descriptor(cl::sycl::device device,
   size_t nb_work_group = up_rounded_division(size, size_per_work_group);
 
   const cl::sycl::id<3> max_work_item_sizes =
-    device.get_info<cl::sycl::info::device::max_work_item_sizes>();
+    device.get_info<
+#if defined(__HIPSYCL__)
+      cl::sycl::info::device::max_work_item_sizes
+#else
+      cl::sycl::info::device::max_work_item_sizes<3>
+#endif
+    >();
   const auto max_work_item = min(
     device.get_info<cl::sycl::info::device::max_work_group_size>(),
     max_work_item_sizes[0]);
@@ -556,13 +568,11 @@ OutT inner_product_sequential_sycl(cl::sycl::queue q, InputIterator1 input_iter1
                                    IndexT size, BinaryOperation1 op1, BinaryOperation2 op2) {
   {
     cl::sycl::buffer<OutT, 1> output_buff(&value, cl::sycl::range<1>(1));
-    using KernelName = cl::sycl::helpers::NameGen<0, BaseKernelName,
-                                                  BinaryOperation1, BinaryOperation2>;
     q.submit([&](cl::sycl::handler& cgh) {
       auto input1 = input_iter1;
       auto input2 = input_iter2;
       auto output = output_buff.template get_access<cl::sycl::access::mode::read_write>(cgh);
-      cgh.single_task<KernelName>([=]() {
+      cgh.single_task([=]() {
         for (auto i = 0; i < size; ++i) {
           output[0] = op1(output[0], op2(input1[i], input2[i]));
         }
